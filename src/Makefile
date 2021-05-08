@@ -1,12 +1,18 @@
 OPTIONS=-mmcu=atmega48p -Wall -Os
-SOURCES=main.c
+DEPS=uart.c uart.h command.h
+SOURCES=uart.c
 
-all: control.hex
+all: colortroll keypad projector
 
-control.elf: ${SOURCES}
-	avr-gcc ${OPTIONS} -o $@ $^
+.PHONY: colortroll keypad projector
+colortroll: colortroll.hex
+keypad: keypad.hex
+projector: projector.hex
 
-control.hex: control.elf
+%.elf: %.c ${DEPS}
+	avr-gcc ${OPTIONS} -o $@ $< ${SOURCES}
+
+%.hex: %.elf
 	avr-objcopy -j .text -j .data -O ihex $^ $@
 
 .PHONY: clean

@@ -1,6 +1,6 @@
 /**
  * Project:   ColorTroll
- * File:      uart.h
+ * File:      uart.c
  * Author:    Stefan Hepp <stefan@stefant.org>
  *
  * Copyright 2021 Stefan Hepp
@@ -18,21 +18,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
- * Common UART interface functions and structures.
+ * Common UART interface functions.
  *
  */
-#ifndef __LC_UART_H__
-#define __LC_UART_H__
+#include "uart.h"
 
-// UART buffer size in characters
-#define UART_BUF_SZ  8
+uart_buf_t UART_TX_Buf;
+uart_buf_t UART_RX_Buf;
 
-// UART send/receive buffer
-typedef struct {
-    unsigned char start;
-    unsigned char len;
-    unsigned char buf[UART_BUF_SZ];
-} uart_buf_t;
-
-
-#endif

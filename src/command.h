@@ -1,9 +1,9 @@
 /**
- * Project:   LightControl
+ * Project:   ColorTroll
  * File:      command.h
  * Author:    Stefan Hepp <stefan@stefant.org>
  *
- * Copyright 2020 Stefan Hepp
+ * Copyright 2021 Stefan Hepp
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
