@@ -1,5 +1,5 @@
 /**
- * Project:   ColorTroll
+ * Project:   FancyLights
  * File:      projector.c
  * Author:    Stefan Hepp <stefan@stefant.org>
  *
@@ -18,7 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
- * Projector control board code for ColorTroll.
+ * Projector control board code for FancyLights.
  *
  * Pinout:
  * - PortB:

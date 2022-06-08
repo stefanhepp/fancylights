@@ -1,6 +1,6 @@
 /**
- * Project:   ColorTroll
- * File:      colortroll.c
+ * Project:   FancyLights
+ * File:      fancycontrol.c
  * Author:    Stefan Hepp <stefan@stefant.org>
  *
  * Copyright 2021 Stefan Hepp
@@ -18,7 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
- * ColorTroll control board code for ColorTroll.
+ * Control board sourcecode for FancyLights.
  *
  * Pinout:
  * - PortB:

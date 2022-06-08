@@ -1,5 +1,5 @@
 /**
- * Project:   ColorTroll
+ * Project:   FancyLights
  * File:      keypad.c
  * Author:    Stefan Hepp <stefan@stefant.org>
  *
@@ -18,7 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
- * Keypad control board code for ColorTroll.
+ * Keypad control board sourcecode for FancyLights.
  *
  * Pinout:
  * - PortB:

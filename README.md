@@ -1,5 +1,5 @@
-ColorTroll
-==========
+FancyLights
+===========
 
 This is the sourcecode and plans for my home LED light and projector control system.
 
@@ -8,7 +8,7 @@ Content
 
 This project consists of the following controller boards:
 - `keypad`: Sources for a keypad controller that communicates via RS232 with the main controller board and via I2C with a Raspberry PI.
-- `colortroll`: Sources for the main light controller, which controls the lights and screen, and communicates via I2C with the beamer control board.
+- `fancycontrol`: Sources for the main light controller, which controls the lights and screen, and communicates via I2C with the projector control board.
 - `projector`: Sources for the projector control board, which controls a servo for the projector mount locking mechanism and communicates via RS232 with the projector.
 
 This repository contains the following folders:

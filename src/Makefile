@@ -2,10 +2,10 @@ OPTIONS=-mmcu=atmega48p -Wall -Os
 DEPS=uart.c uart.h command.h
 SOURCES=uart.c
 
-all: colortroll keypad projector
+all: fancycontrol keypad projector
 
-.PHONY: colortroll keypad projector
-colortroll: colortroll.hex
+.PHONY: fancycontrol keypad projector
+fancycontrol: fancycontrol.hex
 keypad: keypad.hex
 projector: projector.hex
 

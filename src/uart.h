@@ -1,5 +1,5 @@
 /**
- * Project:   ColorTroll
+ * Project:   FancyLights
  * File:      uart.h
  * Author:    Stefan Hepp <stefan@stefant.org>
  *
