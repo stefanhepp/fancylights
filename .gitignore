@@ -1,6 +1,39 @@
-*.swp
+# Ignore KiCAD backups
+*.000
+*.bak
+*.bck
+*.kicad_pcb-bak
+*.kicad_sch-bak
+*-backups
+*.kicad_prl
+*.sch-bak
+*~
+_autosave-*
+*.lck
+*.tmp
+*-save.pro
+*-save.kicad_pcb
+fp-info-cache
+\#auto_saved_files#
+*.lck
+
+# Ignore FreeCAD backups
+*.FCStd1
+*.FCBak
+
+# Ignore Blender backups
+*.blend1
+
+# Ignore Dia and Draw.io backups
+*.dia~
+*.dtmp
+*.drawio.bkp
+
+# Ignore object binaries
 *.elf
 *.hex
 *.pyc
 *.o
-*.bkp
+
+# Ignore editor temp files
+*.swp
