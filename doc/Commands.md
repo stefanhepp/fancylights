@@ -1,6 +1,37 @@
 Commands
 ========
 
+Keypad
+------
+
+I2C: Slave Addr
+
+o) I2C Receive
+- 3D On
+- 3D Format
+- Set RBG Color: 
+- Light On
+- Light Off
+- Set Brightness
+- Projector Up
+- Projector Down
+
+UART: 
+
+o) UART Send
+- 
+
+Controller
+----------
+
+UART Projector:
+
+o) UART Projector Send:
+- 
+
+o) UART Projector Receive:
+- 
+
 Acer 650
 --------
 

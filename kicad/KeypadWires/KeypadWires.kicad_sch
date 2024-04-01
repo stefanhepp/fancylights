@@ -881,7 +881,7 @@
 	)
 	(wire
 		(pts
-			(xy 120.65 97.79) (xy 133.35 97.79)
+			(xy 111.76 97.79) (xy 99.06 97.79)
 		)
 		(stroke
 			(width 0)
@@ -891,7 +891,7 @@
 	)
 	(wire
 		(pts
-			(xy 93.98 95.25) (xy 93.98 97.79)
+			(xy 138.43 95.25) (xy 138.43 97.79)
 		)
 		(stroke
 			(width 0)
@@ -951,7 +951,7 @@
 	)
 	(wire
 		(pts
-			(xy 97.79 119.38) (xy 104.14 119.38)
+			(xy 123.19 119.38) (xy 116.84 119.38)
 		)
 		(stroke
 			(width 0)
@@ -961,7 +961,7 @@
 	)
 	(wire
 		(pts
-			(xy 120.65 92.71) (xy 133.35 92.71)
+			(xy 111.76 92.71) (xy 99.06 92.71)
 		)
 		(stroke
 			(width 0)
@@ -971,7 +971,7 @@
 	)
 	(wire
 		(pts
-			(xy 97.79 124.46) (xy 104.14 124.46)
+			(xy 123.19 124.46) (xy 116.84 124.46)
 		)
 		(stroke
 			(width 0)
@@ -981,7 +981,7 @@
 	)
 	(wire
 		(pts
-			(xy 119.38 121.92) (xy 127 121.92)
+			(xy 101.6 121.92) (xy 93.98 121.92)
 		)
 		(stroke
 			(width 0)
@@ -991,7 +991,7 @@
 	)
 	(wire
 		(pts
-			(xy 138.43 92.71) (xy 138.43 95.25)
+			(xy 93.98 92.71) (xy 93.98 95.25)
 		)
 		(stroke
 			(width 0)
@@ -1001,7 +1001,7 @@
 	)
 	(wire
 		(pts
-			(xy 93.98 121.92) (xy 104.14 121.92)
+			(xy 127 121.92) (xy 116.84 121.92)
 		)
 		(stroke
 			(width 0)
@@ -1021,7 +1021,7 @@
 	)
 	(wire
 		(pts
-			(xy 127 116.84) (xy 127 121.92)
+			(xy 93.98 116.84) (xy 93.98 121.92)
 		)
 		(stroke
 			(width 0)
@@ -1031,7 +1031,7 @@
 	)
 	(wire
 		(pts
-			(xy 93.98 95.25) (xy 105.41 95.25)
+			(xy 138.43 95.25) (xy 127 95.25)
 		)
 		(stroke
 			(width 0)
@@ -1041,7 +1041,7 @@
 	)
 	(wire
 		(pts
-			(xy 138.43 95.25) (xy 120.65 95.25)
+			(xy 93.98 95.25) (xy 111.76 95.25)
 		)
 		(stroke
 			(width 0)
@@ -1051,7 +1051,7 @@
 	)
 	(wire
 		(pts
-			(xy 93.98 125.73) (xy 93.98 121.92)
+			(xy 127 125.73) (xy 127 121.92)
 		)
 		(stroke
 			(width 0)
@@ -1080,24 +1080,24 @@
 		(uuid "f2da5ed3-ce56-4bc0-9162-5f07c7d96bfb")
 	)
 	(label "SDA"
-		(at 97.79 124.46 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "0a2a6c90-e437-4f74-88e5-60e7c5ac127b")
-	)
-	(label "RS232_OUT"
-		(at 133.35 92.71 180)
+		(at 123.19 124.46 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 			(justify right bottom)
+		)
+		(uuid "0a2a6c90-e437-4f74-88e5-60e7c5ac127b")
+	)
+	(label "RS232_OUT"
+		(at 99.06 92.71 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
 		)
 		(uuid "0c6d9e62-634d-409b-8e5f-37103f9edfe8")
 	)
@@ -1124,24 +1124,24 @@
 		(uuid "5f80fe2f-bbb2-4904-9011-cc44b7e7f59e")
 	)
 	(label "SCL"
-		(at 97.79 119.38 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "81fa8899-3bee-43ba-9043-399e36cbb052")
-	)
-	(label "RS232_IN"
-		(at 133.35 97.79 180)
+		(at 123.19 119.38 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 			(justify right bottom)
+		)
+		(uuid "81fa8899-3bee-43ba-9043-399e36cbb052")
+	)
+	(label "RS232_IN"
+		(at 99.06 97.79 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
 		)
 		(uuid "9e88cf86-219f-4e0a-9686-981951bb959a")
 	)
@@ -1169,16 +1169,15 @@
 	)
 	(symbol
 		(lib_id "Connector:Mini-DIN-6")
-		(at 113.03 95.25 0)
+		(at 119.38 95.25 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "10d99b34-c7bb-4d33-907b-98b8f300d336")
 		(property "Reference" "J2"
-			(at 113.0477 85.09 0)
+			(at 119.3977 85.09 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1186,7 +1185,7 @@
 			)
 		)
 		(property "Value" "Controller"
-			(at 113.0477 87.63 0)
+			(at 119.3977 87.63 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1194,7 +1193,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 113.03 95.25 0)
+			(at 119.38 95.25 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1203,7 +1202,7 @@
 			)
 		)
 		(property "Datasheet" "http://service.powerdynamics.com/ec/Catalog17/Section%2011.pdf"
-			(at 113.03 95.25 0)
+			(at 119.38 95.25 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1212,7 +1211,7 @@
 			)
 		)
 		(property "Description" "6-pin Mini-DIN connector"
-			(at 113.03 95.25 0)
+			(at 119.38 95.25 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1249,7 +1248,8 @@
 	)
 	(symbol
 		(lib_id "power:+5V")
-		(at 127 116.84 0)
+		(at 93.98 116.84 0)
+		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -1258,7 +1258,7 @@
 		(fields_autoplaced yes)
 		(uuid "10f492b1-d088-4782-a691-ed51c95c4bc8")
 		(property "Reference" "#PWR01"
-			(at 127 120.65 0)
+			(at 93.98 120.65 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1267,7 +1267,7 @@
 			)
 		)
 		(property "Value" "+5V"
-			(at 127 111.76 0)
+			(at 93.98 111.76 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1275,7 +1275,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 127 116.84 0)
+			(at 93.98 116.84 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1284,7 +1284,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 127 116.84 0)
+			(at 93.98 116.84 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1293,7 +1293,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+5V\""
-			(at 127 116.84 0)
+			(at 93.98 116.84 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1315,7 +1315,8 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 93.98 97.79 0)
+		(at 138.43 97.79 0)
+		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -1324,7 +1325,7 @@
 		(fields_autoplaced yes)
 		(uuid "16a1e664-3752-422f-a0a4-59176f3021f6")
 		(property "Reference" "#PWR05"
-			(at 93.98 104.14 0)
+			(at 138.43 104.14 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1333,7 +1334,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 93.98 102.87 0)
+			(at 138.43 102.87 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1341,7 +1342,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 93.98 97.79 0)
+			(at 138.43 97.79 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1350,7 +1351,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 93.98 97.79 0)
+			(at 138.43 97.79 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1359,7 +1360,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 93.98 97.79 0)
+			(at 138.43 97.79 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1381,7 +1382,8 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 93.98 125.73 0)
+		(at 127 125.73 0)
+		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -1390,7 +1392,7 @@
 		(fields_autoplaced yes)
 		(uuid "1f26257a-1037-49b0-ba2d-5a3365d57bbe")
 		(property "Reference" "#PWR04"
-			(at 93.98 132.08 0)
+			(at 127 132.08 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1399,7 +1401,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 93.98 130.81 0)
+			(at 127 130.81 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1407,7 +1409,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 93.98 125.73 0)
+			(at 127 125.73 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1416,7 +1418,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 93.98 125.73 0)
+			(at 127 125.73 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1425,7 +1427,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 93.98 125.73 0)
+			(at 127 125.73 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1447,7 +1449,8 @@
 	)
 	(symbol
 		(lib_id "power:+5V")
-		(at 138.43 92.71 0)
+		(at 93.98 92.71 0)
+		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -1456,7 +1459,7 @@
 		(fields_autoplaced yes)
 		(uuid "4b0e10f7-78a1-40e2-b46d-c03dac2734e6")
 		(property "Reference" "#PWR06"
-			(at 138.43 96.52 0)
+			(at 93.98 96.52 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1465,7 +1468,7 @@
 			)
 		)
 		(property "Value" "+5V"
-			(at 138.43 87.63 0)
+			(at 93.98 87.63 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1473,7 +1476,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 138.43 92.71 0)
+			(at 93.98 92.71 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1482,7 +1485,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 138.43 92.71 0)
+			(at 93.98 92.71 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1491,7 +1494,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+5V\""
-			(at 138.43 92.71 0)
+			(at 93.98 92.71 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1659,16 +1662,15 @@
 	)
 	(symbol
 		(lib_id "Connector:Mini-DIN-6")
-		(at 111.76 121.92 0)
+		(at 109.22 121.92 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "c54b629f-5e44-4834-8f1d-2c01f987630d")
 		(property "Reference" "J3"
-			(at 111.7777 111.76 0)
+			(at 109.2377 111.76 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1676,7 +1678,7 @@
 			)
 		)
 		(property "Value" "Raspberry"
-			(at 111.7777 114.3 0)
+			(at 109.2377 114.3 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1684,7 +1686,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 111.76 121.92 0)
+			(at 109.22 121.92 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1693,7 +1695,7 @@
 			)
 		)
 		(property "Datasheet" "http://service.powerdynamics.com/ec/Catalog17/Section%2011.pdf"
-			(at 111.76 121.92 0)
+			(at 109.22 121.92 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1702,7 +1704,7 @@
 			)
 		)
 		(property "Description" "6-pin Mini-DIN connector"
-			(at 111.76 121.92 0)
+			(at 109.22 121.92 0)
 			(effects
 				(font
 					(size 1.27 1.27)

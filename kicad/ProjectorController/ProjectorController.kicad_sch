@@ -2746,6 +2746,10 @@
 		(uuid "1f8ba5a3-e70c-4936-bb2f-9d71b8527b33")
 	)
 	(no_connect
+		(at 81.28 106.68)
+		(uuid "22c3090a-d287-444a-836b-5446dad6366e")
+	)
+	(no_connect
 		(at 81.28 73.66)
 		(uuid "235692df-0776-42cd-bb1a-7b1a90b47d4b")
 	)
@@ -2760,6 +2764,10 @@
 	(no_connect
 		(at 81.28 88.9)
 		(uuid "6828e92e-4cfd-4e57-af1a-18c6bc6e0381")
+	)
+	(no_connect
+		(at 81.28 109.22)
+		(uuid "81e2b4db-51bf-4a5b-a5c3-f37709ffcc89")
 	)
 	(no_connect
 		(at 81.28 129.54)
@@ -3053,16 +3061,6 @@
 	)
 	(wire
 		(pts
-			(xy 116.84 107.95) (xy 116.84 105.41)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "6ccd111f-1d98-427f-9cba-d7c2014ec633")
-	)
-	(wire
-		(pts
 			(xy 142.24 45.72) (xy 151.13 45.72)
 		)
 		(stroke
@@ -3093,17 +3091,7 @@
 	)
 	(wire
 		(pts
-			(xy 116.84 105.41) (xy 120.65 105.41)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "77ed3035-15cc-4388-86a5-0fc50973f051")
-	)
-	(wire
-		(pts
-			(xy 203.2 118.11) (xy 215.9 118.11)
+			(xy 203.2 118.11) (xy 218.44 118.11)
 		)
 		(stroke
 			(width 0)
@@ -3120,16 +3108,6 @@
 			(type default)
 		)
 		(uuid "78d1f000-1b16-438f-85e2-cf9d012a6fe8")
-	)
-	(wire
-		(pts
-			(xy 114.3 102.87) (xy 120.65 102.87)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7a578b1d-0ceb-4be5-83b5-7a3ea595d4f9")
 	)
 	(wire
 		(pts
@@ -3263,7 +3241,7 @@
 	)
 	(wire
 		(pts
-			(xy 203.2 128.27) (xy 215.9 128.27)
+			(xy 203.2 128.27) (xy 218.44 128.27)
 		)
 		(stroke
 			(width 0)
@@ -3280,26 +3258,6 @@
 			(type default)
 		)
 		(uuid "b0aefa1d-0083-4106-9b01-0d16d540dfe7")
-	)
-	(wire
-		(pts
-			(xy 114.3 100.33) (xy 120.65 100.33)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "ba73d4c7-334e-46c9-be20-3b8c04ff7675")
-	)
-	(wire
-		(pts
-			(xy 81.28 109.22) (xy 90.17 109.22)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c4545dff-4792-4982-9f4f-54357d5fb01a")
 	)
 	(wire
 		(pts
@@ -3433,16 +3391,6 @@
 	)
 	(wire
 		(pts
-			(xy 81.28 106.68) (xy 90.17 106.68)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "efebb211-26f5-4621-8e62-36e32a71bae8")
-	)
-	(wire
-		(pts
 			(xy 166.37 33.02) (xy 166.37 35.56)
 		)
 		(stroke
@@ -3535,19 +3483,8 @@
 		)
 		(uuid "2a31d67c-88ee-4b10-9613-ed0879a5822f")
 	)
-	(label "SCL"
-		(at 114.3 100.33 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "2ba41647-cf91-4375-ae2d-f0c2abc13818")
-	)
 	(label "SW_RS232_IN"
-		(at 218.44 133.35 180)
+		(at 218.44 128.27 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3557,19 +3494,8 @@
 		)
 		(uuid "3674e2b3-655a-494b-b46a-f9033331f498")
 	)
-	(label "SW_TXD"
-		(at 104.14 123.19 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "44718157-4b1b-4ca2-bb27-675038f939c5")
-	)
 	(label "RS232_IN"
-		(at 215.9 128.27 180)
+		(at 218.44 133.35 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3602,7 +3528,7 @@
 		(uuid "4976a69b-6b08-42a8-8c85-d2584d2b007c")
 	)
 	(label "SW_RXD"
-		(at 154.94 133.35 0)
+		(at 154.94 128.27 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3613,7 +3539,7 @@
 		(uuid "603f647e-485e-41d5-ac73-6e741f154bd8")
 	)
 	(label "TXD"
-		(at 154.94 118.11 0)
+		(at 154.94 123.19 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3646,7 +3572,7 @@
 		(uuid "67938894-b535-4e1a-ba8f-e1c176fcf5f7")
 	)
 	(label "RXD"
-		(at 154.94 128.27 0)
+		(at 154.94 133.35 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3668,7 +3594,7 @@
 		(uuid "6e2d00e8-50bb-43ac-8b15-db1989b5ae80")
 	)
 	(label "SW_TXD"
-		(at 154.94 123.19 0)
+		(at 154.94 118.11 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3700,17 +3626,6 @@
 		)
 		(uuid "80237f8d-aed6-44e5-9fe0-2e0ad0bb2ece")
 	)
-	(label "SCL"
-		(at 90.17 109.22 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "84f0ae6a-1b01-4af5-9df3-02b3f2b4ec5e")
-	)
 	(label "SW_RXD"
 		(at 90.17 121.92 180)
 		(fields_autoplaced yes)
@@ -3734,7 +3649,7 @@
 		(uuid "9733ece2-676d-4620-b372-4fa09c78e322")
 	)
 	(label "RS232_OUT"
-		(at 215.9 118.11 180)
+		(at 218.44 123.19 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3766,17 +3681,6 @@
 		)
 		(uuid "9f8d3647-d528-4cc7-95f5-992f07b01e2e")
 	)
-	(label "SW_RXD"
-		(at 104.14 133.35 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "a3558f62-2f51-4dd9-802e-6dc43f6d5573")
-	)
 	(label "SW_TXD"
 		(at 90.17 124.46 180)
 		(fields_autoplaced yes)
@@ -3787,17 +3691,6 @@
 			(justify right bottom)
 		)
 		(uuid "b217954b-63d3-4622-8b4a-87e172a66931")
-	)
-	(label "SDA"
-		(at 114.3 102.87 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "bc691100-e620-49af-a91d-6732b72313bc")
 	)
 	(label "Endstop"
 		(at 90.17 76.2 180)
@@ -3811,7 +3704,7 @@
 		(uuid "c34052c1-3fbc-4592-bd56-77e00f3632e6")
 	)
 	(label "SW_RS232_OUT"
-		(at 218.44 123.19 180)
+		(at 218.44 118.11 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3820,17 +3713,6 @@
 			(justify right bottom)
 		)
 		(uuid "cc48384c-71f6-4375-99f8-6927fcb913fd")
-	)
-	(label "SDA"
-		(at 90.17 106.68 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "d465b13e-d277-468d-b71d-c0eaea6729d8")
 	)
 	(label "Servo_En"
 		(at 90.17 101.6 180)
@@ -5547,79 +5429,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector_Generic:Conn_01x03")
-		(at 125.73 102.87 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "c391047c-6c62-499f-ba54-b34f470f8ec8")
-		(property "Reference" "J6"
-			(at 128.27 101.5999 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "I2C"
-			(at 128.27 104.1399 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" ""
-			(at 125.73 102.87 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 125.73 102.87 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Generic connector, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)"
-			(at 125.73 102.87 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "42038b96-9b90-434a-b513-d1753f79f8e1")
-		)
-		(pin "3"
-			(uuid "5476f0a4-1fd1-4314-87a3-9d2d6a49eb7f")
-		)
-		(pin "1"
-			(uuid "1c876b16-6931-4e3c-9160-dcdf60c51238")
-		)
-		(instances
-			(project "ProjectorController"
-				(path "/fb47fbd3-5054-4637-be70-abff72462bb1"
-					(reference "J6")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:+5V")
 		(at 212.09 41.91 0)
 		(unit 1)
@@ -6215,72 +6024,6 @@
 			(project "ProjectorController"
 				(path "/fb47fbd3-5054-4637-be70-abff72462bb1"
 					(reference "#PWR09")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 116.84 107.95 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "eba4580d-3c8b-4bf4-924b-a33879806b9b")
-		(property "Reference" "#PWR07"
-			(at 116.84 114.3 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 116.84 113.03 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 116.84 107.95 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 116.84 107.95 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 116.84 107.95 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "067ba49f-28c7-4196-81c9-6fc3661d9cff")
-		)
-		(instances
-			(project "ProjectorController"
-				(path "/fb47fbd3-5054-4637-be70-abff72462bb1"
-					(reference "#PWR07")
 					(unit 1)
 				)
 			)

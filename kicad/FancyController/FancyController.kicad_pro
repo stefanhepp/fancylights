@@ -385,6 +385,10 @@
     [
       "55dff723-8289-4dee-b481-22bc7e6454cb",
       "Root"
+    ],
+    [
+      "b0040e9a-f4e4-40a7-a74e-cce9411a5478",
+      "PowerConnectors"
     ]
   ],
   "text_variables": {}
