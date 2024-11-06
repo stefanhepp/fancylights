@@ -1,0 +1,29 @@
+{
+	"folders": [
+		{
+			"name": "include",
+			"path": "include"
+		},
+		{
+			"name": "KeypadEncoder",
+			"path": "KeypadEncoder"
+		},
+		{
+			"name": "LightController,
+			"path": "LightController"
+		},
+		{
+			"name": "ProjectorController",
+			"path": "ProjectorController"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"istream": "cpp",
+			"*.tcc": "cpp",
+			"string": "cpp",
+			"unordered_map": "cpp",
+			"random": "cpp"
+		}
+	}
+}
