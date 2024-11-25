@@ -9,12 +9,15 @@
 			"path": "KeypadEncoder"
 		},
 		{
-			"name": "LightController,
+			"name": "LightController",
 			"path": "LightController"
 		},
 		{
 			"name": "ProjectorController",
 			"path": "ProjectorController"
+		},
+		{
+			"path": "../../../PlatformIO/AvrLib"
 		}
 	],
 	"settings": {

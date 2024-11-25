@@ -18,7 +18,7 @@
 #include <Arduino.h>
 #include <MegaWire.h>
 
-#include <common_config.h>
+#include <commands.h>
 
 #include "config.h"
 #include "Keypad.h"
@@ -46,7 +46,7 @@ static void clearIRQ(uint8_t flag)
     }
 }
 
-void onButtonPress(uint8_t kbd, uint8_t btn, bool longPress)
+void onButtonPress(uint8_t btn, bool longPress)
 {
 
 }
@@ -76,8 +76,18 @@ void i2cRequest()
 
 void setup() {
     // Enable pullups for unconnected pins
+    pinMode(PIN_PB1, INPUT_PULLUP);
+    pinMode(PIN_PB2, INPUT_PULLUP);
+    pinMode(PIN_PB3, INPUT_PULLUP);
+    pinMode(PIN_PB4, INPUT_PULLUP);
+    pinMode(PIN_PB5, INPUT_PULLUP);
+    pinMode(PIN_PB6, INPUT_PULLUP);
+    pinMode(PIN_PB7, INPUT_PULLUP);
     pinMode(PIN_PC6, INPUT_PULLUP);
- 
+    pinMode(PIN_PD3, INPUT_PULLUP);
+
+    pinMode(PIN_SWITCH, INPUT_PULLUP);
+
     // Set output pin modes
     // Set pin value first before turing on output mode, to prevent spurious signals
     digitalWrite(PIN_INTERRUPT, LOW);
@@ -85,10 +95,10 @@ void setup() {
 
     Wire.onReceive(i2cReceive);
     Wire.onRequest(i2cRequest);
-    pistons.setPressEvent(onButtonPress);
+    keypad.setPressEvent(onButtonPress);
 
-    Wire.begin(Controller::MC_Piston_Technics);
-    keypads.begin(1);
+    Wire.begin(KEYPAD_I2C_ADDR);
+    keypad.begin();
 }
 
 void loop() {
