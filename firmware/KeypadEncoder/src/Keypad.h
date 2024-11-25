@@ -17,7 +17,7 @@
 static const uint8_t NUM_BUTTONS = 4*4;
 
 // Number of ticks for long press, in 6*1.5 us per tick, about 2 seconds.
-static const uint8_t LONG_PRESS_DURATION = 120;
+static const uint8_t LONG_PRESS_DURATION = 240;
 
 using KeyPressCallback = void(*)(uint8_t btn, bool longPress);
 

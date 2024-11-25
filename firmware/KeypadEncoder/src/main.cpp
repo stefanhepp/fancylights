@@ -30,7 +30,7 @@ MegaWire Wire;
 Keypad keypad;
 LightState LState;
 
-bool LightSwitch;
+bool LightSwitch = true;
 
 bool StatusReceived = false;
 
@@ -328,7 +328,7 @@ void setup() {
     Wire.begin(KEYPAD_I2C_ADDR);
     keypad.begin();
 
-    StatusReceived = false;
+    StatusReceived = true;
     delay(500);
     sendCommand(CMD_REQUEST_STATUS, 0);
 }

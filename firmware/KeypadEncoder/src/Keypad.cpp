@@ -45,7 +45,7 @@ void Keypad::begin()
 void Keypad::readLine(const uint8_t row) {
     for (uint8_t i = 0; i < 4; i++) {
         uint8_t btn = getBtnNumber(row, i);        
-        uint8_t pressed = digitalRead(PIN_COLS[i]);
+        uint8_t pressed = !digitalRead(PIN_COLS[i]);
 
         if (pressed) {
             // Increase counter, to measure duration of button press
@@ -86,4 +86,6 @@ void Keypad::poll()
 
         digitalWrite(PIN_ROWS[row], HIGH);
     }
+
+    delay(2);
 }
