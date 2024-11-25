@@ -19,7 +19,7 @@ class LightState
     private:
         uint8_t mLightMode;
 
-        uint8_t mLightIntensity;
+        int mLightIntensity;
 
         uint8_t mRGBMode;
 
@@ -40,6 +40,12 @@ class LightState
 
         void toggleProjector();
 
+        void changeIntensity(int delta);
+
+        void changeRGBSaturation(int delta);
+
+        void changeRGBHue(int delta);
+        
 
         void setLightMode(uint8_t mode) { mLightMode = mode; }
 

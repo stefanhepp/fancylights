@@ -42,6 +42,27 @@ void LightState::toggleProjector()
     mProjectorMode = mProjectorMode != PROJECTOR_OFF ? PROJECTOR_OFF : PROJECTOR_ON;
 }
 
+void LightState::changeIntensity(int delta)
+{
+    mLightIntensity += delta;
+    if (mLightIntensity < 0) {
+        mLightIntensity = 0;
+    }
+    if (mLightIntensity > 255) {
+        mLightIntensity = 255;
+    }
+}
+
+void LightState::changeRGBSaturation(int delta)
+{
+
+}
+
+void LightState::changeRGBHue(int delta)
+{
+    
+}
+
 void LightState::setRGB(uint8_t red, uint8_t green, uint8_t blue)
 {
     mRGB[0] = red;

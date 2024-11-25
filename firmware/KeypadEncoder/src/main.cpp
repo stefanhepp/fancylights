@@ -136,53 +136,86 @@ void onButtonPress(uint8_t btn, bool longPress)
     sendCommand(1, btn | (longPress ? 0x80 : 0) );
 
     switch (btn) {
-        case 0:
+        case 0: // 3D mode
+            sendCommand(CMD_PROJECTOR_COMMAND, PROJECTOR_3D);
+            break;
+        case 1: // VR mode
+            sendCommand(CMD_PROJECTOR_COMMAND, PROJECTOR_VR);
+            break;
+        case 2: // Color cycle forward
+            if (longPress) {
+                sendCommand(CMD_RGB_MODE, RGB_CYCLE);
+            } else {
+                LState.changeRGBHue(longPress ? 32 : 16);
+                sendRGBColor();        
+            }
+            break;
+        case 3: // Color cycle back
+            if (longPress) {
+                sendCommand(CMD_RGB_MODE, RGB_CYCLE);
+            } else {
+                LState.changeRGBHue(longPress ? 32 : 16);
+                sendRGBColor();        
+            }
+            break;
+        case 4: // Fire mode
+            sendCommand(CMD_RGB_MODE, RGB_FIRE);        
+            break;
+        case 5: // Movie mode
+            sendCommand(CMD_PROJECTOR_COMMAND, PROJECTOR_NORMAL);
+            sendCommand(CMD_RGB_MODE, longPress ? RGB_ON : RGB_DIMMED);
+            break;
+        case 6: // RGB saturation down
+            LState.changeRGBSaturation(longPress ? -32 : -16);
+            sendRGBColor();
+            break;
+        case 7: // RGB saturation up
+            LState.changeRGBSaturation(longPress ? 32 : 16);
+            sendRGBColor();
+            break;
+        case 8: // Screen down
+            if (longPress) {
+                sendCommand(CMD_SCREEN, LIFT_STOP);
+            } else {
+                sendCommand(CMD_SCREEN, LIFT_DOWN);
+            }        
+            break;
+        case 9: // Screen up
+            if (longPress) {
+                sendCommand(CMD_SCREEN, LIFT_STOP);
+            } else {
+                sendCommand(CMD_SCREEN, LIFT_UP);
+            }        
+            break;
+        case 10: // Intensity down
+            LState.changeIntensity(longPress ? -255 : -16);
+            sendCommand(CMD_LIGHT_INTENSITY, LState.lightIntensity());
+            break;
+        case 11: // Intensity up
+            LState.changeIntensity(longPress ? 255 : 16);
+            sendCommand(CMD_LIGHT_INTENSITY, LState.lightIntensity());
+            break;
+        case 12: // Projector down
+            if (longPress) {
+                sendCommand(CMD_PROJECTOR_LIFT, LIFT_STOP);    
+            } else {
+                sendCommand(CMD_PROJECTOR_LIFT, LIFT_DOWN);
+            }        
+            break;
+        case 13: // Projector up
+            if (longPress) {
+                sendCommand(CMD_PROJECTOR_LIFT, LIFT_STOP);    
+            } else {
+                sendCommand(CMD_PROJECTOR_LIFT, LIFT_UP);
+            }
+            break;
+        case 14: // Projector on/off
+            // LState.toggleProjector();
 
             break;
-        case 1:
-
-            break;
-        case 2:
-        
-            break;
-        case 3:
-        
-            break;
-        case 4:
-        
-            break;
-        case 5:
-        
-            break;
-        case 6:
-        
-            break;
-        case 7:
-        
-            break;
-        case 8:
-        
-            break;
-        case 9:
-        
-            break;
-        case 10:
-        
-            break;
-        case 11:
-        
-            break;
-        case 12:
-        
-            break;
-        case 13:
-        
-            break;
-        case 14:
-        
-            break;
-        case 15:
-        
+        case 15: // Light on/off
+            LState.toggleLight();
+            sendCommand(CMD_LIGHT_MODE, LState.lightMode());
             break;
     }
 }
