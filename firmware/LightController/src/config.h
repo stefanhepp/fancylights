@@ -16,18 +16,15 @@
 /* Common controller settings                           */
 /* ==================================================== */
 
-#define PORT_OUT      B
-#define PORT_IN       D
-
-/** 
- * Set PISTON_TECHNICS to compile for Technics keyboard pistons,
- * or unset to compile for Keyboard controller pistons.
- */
-//#define PISTON_TECHNICS
-
-static const uint8_t PIN_INTERRUPT   = PIN_PC3;
-
-static const uint8_t PIN_ADDR1       = PIN_PC2;
-static const uint8_t PIN_ADDR2       = PIN_PC1;
-static const uint8_t PIN_ADDR3       = PIN_PC0;
-
+static const uint8_t PIN_SW_TXD       = PIN_PB0;
+static const uint8_t PIN_SW_RXD       = PIN_PB7;
+static const uint8_t PIN_R            = PIN_PB1;
+static const uint8_t PIN_G            = PIN_PB2;
+static const uint8_t PIN_B            = PIN_PD3;
+static const uint8_t PIN_LAMP1        = PIN_PD5;
+static const uint8_t PIN_LAMP2        = PIN_PD6;
+static const uint8_t PIN_SCREEN_UP    = PIN_PC1;
+static const uint8_t PIN_SCREEN_DOWN  = PIN_PC0;
+static const uint8_t PIN_WINCH_SWITCH = PIN_PB6;
+static const uint8_t PIN_MOTOR_IN1    = PIN_PC2;
+static const uint8_t PIN_MOTOR_IN2    = PIN_PC3;

@@ -1,106 +1,147 @@
-/**
- * Author: Stefan Hepp (stefan@stefant.org)
- * 
- * Implementation of the pedalboard controller.
- * Reads pedal switches and generates MIDI messages.
- * Configurable either via config switch or I2C interface.
- * 
- * Pins:
- * - PB0-7: IN;  Keyboard data bytes
- * - PC3:   OUT; Interrupt to signal I2C data ready
- * - PC4,5: I2C
- * - PC6:   In;  Reset (via ISP)
- * - PD0,1  UART
- * - PD2-4: OUT; Select line
- * - PD5-6: OUT; Select keyboard
- **/
+/*
+ * @project     FancyController
+ * @author      Stefan Hepp, stefan@stefant.org
+ *
+ * Controller main loop implementation.
+ *
+ * Copyright 2024 Stefan Hepp
+ * License: GPL v3
+ * See 'COPYRIGHT.txt' for copyright and licensing information.
+ */
 
 #include <Arduino.h>
-#include <MegaWire.h>
 
 #include <commands.h>
 
 #include "config.h"
-#include "Keypad.h"
+#include "LED.h"
+#include "Settings.h"
+#include "ProjectorController.h"
 
-// Create device driver instances
-MegaWire Wire;
+Settings settings;
+LEDDriver LEDs(settings);
+ProjectorController Projector(settings);
 
-Keypad keypad;
+static const int UART_BUFFER_SIZE = 16;
+static uint8_t UARTBuffer[UART_BUFFER_SIZE];
+static uint8_t UARTBufferLength = 0;
 
-static const uint8_t IRQ_BUTTONS = 0;
-
-static uint16_t IRQFlags = 0x00;
-
-static void sendIRQ(uint8_t flag)
+void sendStatus()
 {
-    IRQFlags |= (1<<flag);
-    digitalWrite(PIN_INTERRUPT, HIGH);
+    Serial.write(CMD_HEADER | CMD_READ_STATUS);
+    Serial.write(LEDs.lightMode());
+    Serial.write(LEDs.intensity());
+    Serial.write(Projector.mode());
+    Serial.write(LEDs.rgbMode());
+    Serial.write(LEDs.ledIntensity(LED_R));
+    Serial.write(LEDs.ledIntensity(LED_G));
+    Serial.write(LEDs.ledIntensity(LED_B));
 }
 
-static void clearIRQ(uint8_t flag)
+void processCommand(uint8_t data)
 {
-    IRQFlags &= ~(1<<flag);
-    if (IRQFlags == 0x00) {
-        digitalWrite(PIN_INTERRUPT, LOW);
+    if (UARTBufferLength == 0 && (data & CMD_HEADER) != CMD_HEADER) {
+        // Wait for command byte, drop other data
+        return;
     }
-}
 
-void onButtonPress(uint8_t btn, bool longPress)
-{
+    if (UARTBufferLength < UART_BUFFER_SIZE) {
+        UARTBuffer[UARTBufferLength++] = data;
+    }
 
-}
-
-void i2cReceive(uint8_t length) {
-    uint8_t cmd = Wire.read();
-
-    switch (cmd) {
-        case I2C_CMD_SET_LEDS:
-            if (Wire.available() > 3) {
-                uint8_t mask1 = Wire.read();
-                uint8_t mask2 = Wire.read();
-                uint8_t mask3 = Wire.read();
-                uint8_t mask4 = Wire.read();
-                uint8_t kbd = (mask1 >> 7);
-                pistons.setLEDs(kbd, mask1 & 0x7F, mask2, mask3, mask4);
+    switch (UARTBuffer[0]) {
+        case CMD_LIGHT_INTENSITY:
+            if (UARTBufferLength >= 2) {
+                LEDs.setIntensity(UARTBuffer[1]);
+                UARTBufferLength = 0;
             }
+            break;
+        case CMD_RGB_COLOR:
+            if (UARTBufferLength >= 4) {
+                LEDs.setLEDIntensity(LED_R, UARTBuffer[1]);
+                LEDs.setLEDIntensity(LED_G, UARTBuffer[2]);
+                LEDs.setLEDIntensity(LED_B, UARTBuffer[3]);
+                UARTBufferLength = 0;
+            }
+            break;
+        case CMD_LIGHT_MODE:
+            if (UARTBufferLength >= 2) {
+                LEDs.setLightMode(UARTBuffer[1]);
+                UARTBufferLength = 0;
+            }
+            break;
+        case CMD_RGB_MODE:
+            if (UARTBufferLength >= 2) {
+                LEDs.setRGBMode(UARTBuffer[1]);
+                UARTBufferLength = 0;
+            }
+            break;
+        case CMD_SCREEN:
+            if (UARTBufferLength >= 2) {
+                // TODO screen up/down 
+
+                UARTBufferLength = 0;
+            }
+            break;
+        case CMD_PROJECTOR_MODE:
+            if (UARTBufferLength >= 2) {
+                Projector.setMode(UARTBuffer[1]);
+                UARTBufferLength = 0;
+            }
+            break;
+        case CMD_PROJECTOR_LIFT:
+            if (UARTBufferLength >= 2) {
+                Projector.move(UARTBuffer[1]);
+                UARTBufferLength = 0;
+            }
+            break;
+        case CMD_REQUEST_STATUS:
+            if (UARTBufferLength >= 2) {
+                sendStatus();
+                UARTBufferLength = 0;
+            }
+            break;
+        default:
+            // unknown command, drop
+            UARTBufferLength = 0;
             break;
     }
 }
 
-void i2cRequest()
-{
-
-    clearIRQ(IRQ_BUTTONS);
-}
-
 void setup() {
     // Enable pullups for unconnected pins
-    pinMode(PIN_PB1, INPUT_PULLUP);
-    pinMode(PIN_PB2, INPUT_PULLUP);
     pinMode(PIN_PB3, INPUT_PULLUP);
     pinMode(PIN_PB4, INPUT_PULLUP);
     pinMode(PIN_PB5, INPUT_PULLUP);
-    pinMode(PIN_PB6, INPUT_PULLUP);
-    pinMode(PIN_PB7, INPUT_PULLUP);
+    pinMode(PIN_PC4, INPUT_PULLUP);
+    pinMode(PIN_PC5, INPUT_PULLUP);
     pinMode(PIN_PC6, INPUT_PULLUP);
-    pinMode(PIN_PD3, INPUT_PULLUP);
+    pinMode(PIN_PD2, INPUT_PULLUP);
+    pinMode(PIN_PD4, INPUT_PULLUP);
+    pinMode(PIN_PD7, INPUT_PULLUP);
 
-    pinMode(PIN_SWITCH, INPUT_PULLUP);
+    pinMode(PIN_SCREEN_UP, OUTPUT);
+    pinMode(PIN_SCREEN_DOWN, OUTPUT);
 
-    // Set output pin modes
-    // Set pin value first before turing on output mode, to prevent spurious signals
-    digitalWrite(PIN_INTERRUPT, LOW);
-    pinMode(PIN_INTERRUPT, OUTPUT);
+    LEDs.begin();
+    Projector.begin();
 
-    Wire.onReceive(i2cReceive);
-    Wire.onRequest(i2cRequest);
-    keypad.setPressEvent(onButtonPress);
-
-    Wire.begin(KEYPAD_I2C_ADDR);
-    keypad.begin();
+    Serial.begin(UART_SPEED_CONTROLLER);
 }
 
 void loop() {
-    keypad.poll();
+    while (Serial.available()) {
+        int data = Serial.read();
+
+        processCommand(data);
+    }
+
+    LEDs.updateLEDs();
+    digitalWrite(PIN_R, LEDs.getLEDStatus(LED_R));
+    digitalWrite(PIN_G, LEDs.getLEDStatus(LED_G));
+    digitalWrite(PIN_B, LEDs.getLEDStatus(LED_B));
+    digitalWrite(PIN_LAMP1, LEDs.getLEDStatus(LED_LAMP1));
+    digitalWrite(PIN_LAMP2, LEDs.getLEDStatus(LED_LAMP2));
+
+    Projector.loop();
 }

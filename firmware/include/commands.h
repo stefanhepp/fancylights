@@ -59,7 +59,7 @@ enum CommandOpcode : uint8_t {
     CMD_SCREEN            = 0x05,
 
     // Projector mode command. Value = ProjectorMode
-    CMD_PROJECTOR_COMMAND = 0x07,
+    CMD_PROJECTOR_MODE    = 0x07,
 
     // Projector lift command. Value = LiftCommand.
     CMD_PROJECTOR_LIFT    = 0x08,

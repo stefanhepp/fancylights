@@ -1,20 +1,13 @@
-/**
- * Author: Stefan Hepp (stefan@stefant.org)
- * 
- * Implementation of the pedalboard controller.
- * Reads pedal switches and generates MIDI messages.
- * Configurable either via config switch or I2C interface.
- * 
- * Pins:
- * - PB0-7: IN;  Keyboard data bytes
- * - PC3:   OUT; Interrupt to signal I2C data ready
- * - PC4,5: I2C
- * - PC6:   In;  Reset (via ISP)
- * - PD0,1  UART
- * - PD2-4: OUT; Select line
- * - PD5-6: OUT; Select keyboard
- **/
-
+/*
+ * @project     FancyController
+ * @author      Stefan Hepp, stefan@stefant.org
+ *
+ * Keypad main loop implementation.
+ *
+ * Copyright 2024 Stefan Hepp
+ * License: GPL v3
+ * See 'COPYRIGHT.txt' for copyright and licensing information.
+ */
 #include <Arduino.h>
 #include <MegaWire.h>
 
@@ -33,6 +26,9 @@ LightState LState;
 bool LightSwitch = true;
 
 bool StatusReceived = false;
+
+// Toggle projector power after receiving the status from the controller back
+bool ToggleProjectorPowerOnStatus = false;
 
 static const uint8_t IRQ_COMMAND = 0;
 static const uint8_t IRQ_STATUS = 1;
@@ -65,6 +61,21 @@ static void clearIRQ(uint8_t flag)
 
 void sendCommand(uint8_t command, uint8_t value, bool sendI2C = true) 
 {
+    switch (command) {
+        case CommandOpcode::CMD_LIGHT_MODE:
+            LState.setLightMode(value);
+            break;
+        case CommandOpcode::CMD_LIGHT_INTENSITY:
+            LState.setIntensity(value);
+            break;       
+        case CommandOpcode::CMD_RGB_MODE:
+            LState.setRGBMode(value);
+            break;
+        case CommandOpcode::CMD_PROJECTOR_MODE:
+            LState.setProjectorMode(value);
+            break;
+    }
+
     Serial.write(CMD_HEADER | command);
     Serial.write(value);
 
@@ -122,6 +133,17 @@ void processCommand(uint8_t data)
 
                 UARTBufferLength = 0;
                 StatusReceived = true;
+
+                // We got a new status, inform RPi to fetch the new status
+                sendIRQ(IRQ_STATUS);
+
+                if (ToggleProjectorPowerOnStatus) {
+                    // If this status was requested by a Projector power toggle button, perform the action now.
+                    LState.toggleProjector();
+                    sendCommand(CMD_PROJECTOR_MODE, LState.projectorMode());
+                    
+                    ToggleProjectorPowerOnStatus = false;
+                }
             }
             break;
         default:
@@ -137,14 +159,16 @@ void onButtonPress(uint8_t btn, bool longPress)
 
     switch (btn) {
         case 0: // 3D mode
-            sendCommand(CMD_PROJECTOR_COMMAND, PROJECTOR_3D);
+            sendCommand(CMD_PROJECTOR_MODE, PROJECTOR_3D);
             break;
         case 1: // VR mode
-            sendCommand(CMD_PROJECTOR_COMMAND, PROJECTOR_VR);
+            sendCommand(CMD_PROJECTOR_MODE, PROJECTOR_VR);
             break;
         case 2: // Color cycle forward
             if (longPress) {
                 sendCommand(CMD_RGB_MODE, RGB_CYCLE);
+            } else if (LState.rgbMode() != RGB_ON) {
+                sendCommand(CMD_RGB_MODE, RGB_ON);
             } else {
                 LState.changeRGBHue(longPress ? 32 : 16);
                 sendRGBColor();        
@@ -153,6 +177,8 @@ void onButtonPress(uint8_t btn, bool longPress)
         case 3: // Color cycle back
             if (longPress) {
                 sendCommand(CMD_RGB_MODE, RGB_CYCLE);
+            } else if (LState.rgbMode() != RGB_ON) {
+                sendCommand(CMD_RGB_MODE, RGB_ON);
             } else {
                 LState.changeRGBHue(longPress ? 32 : 16);
                 sendRGBColor();        
@@ -162,7 +188,7 @@ void onButtonPress(uint8_t btn, bool longPress)
             sendCommand(CMD_RGB_MODE, RGB_FIRE);        
             break;
         case 5: // Movie mode
-            sendCommand(CMD_PROJECTOR_COMMAND, PROJECTOR_NORMAL);
+            sendCommand(CMD_PROJECTOR_MODE, PROJECTOR_NORMAL);
             sendCommand(CMD_RGB_MODE, longPress ? RGB_ON : RGB_DIMMED);
             break;
         case 6: // RGB saturation down
@@ -210,8 +236,9 @@ void onButtonPress(uint8_t btn, bool longPress)
             }
             break;
         case 14: // Projector on/off
-            // LState.toggleProjector();
-
+            // Read the status of the projector first, Delay toggling till we receive the message
+            ToggleProjectorPowerOnStatus = true;
+            sendCommand(CMD_REQUEST_STATUS, 0);
             break;
         case 15: // Light on/off
             LState.toggleLight();
@@ -229,25 +256,9 @@ void i2cReceive(uint8_t length) {
         case CommandOpcode::CMD_LIGHT_INTENSITY:        
         case CommandOpcode::CMD_RGB_MODE:
         case CommandOpcode::CMD_SCREEN:
-        case CommandOpcode::CMD_PROJECTOR_COMMAND:
+        case CommandOpcode::CMD_PROJECTOR_MODE:
         case CommandOpcode::CMD_PROJECTOR_LIFT:
             value = Wire.read();
-
-            // Update local state
-            switch (I2CCommand) {
-                case CommandOpcode::CMD_LIGHT_MODE:
-                    LState.setLightMode(value);
-                    break;
-                case CommandOpcode::CMD_LIGHT_INTENSITY:
-                    LState.setIntensity(value);
-                    break;       
-                case CommandOpcode::CMD_RGB_MODE:
-                    LState.setRGBMode(value);
-                    break;
-                case CommandOpcode::CMD_PROJECTOR_COMMAND:
-                    LState.setProjectorMode(value);
-                    break;
-            }
 
             // Forward command to controller
             sendCommand(I2CCommand, value, false);
