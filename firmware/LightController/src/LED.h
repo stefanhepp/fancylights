@@ -26,15 +26,26 @@ class LEDDriver {
     private:
         Settings &mSettings;
 
+        uint8_t mRGB[3];
+        int16_t mHSV[3];
         uint8_t mIntensity[NUM_LEDS];
 
         uint8_t mLightMode = 0;
         uint8_t mLightIntensity = 255;
+        uint8_t mDimmedIntensity = 50;
 
         uint8_t mRGBMode = 0;
 
         uint8_t mPWMCounter;
         uint8_t mLastCounter;
+
+        int mCycleCounter = 0;
+
+        void recalculate();
+
+        void rgbToHsv();
+
+        void hsvToRgb();
 
     public:
         explicit LEDDriver(Settings &settings);
@@ -45,7 +56,9 @@ class LEDDriver {
 
         uint8_t intensity() const { return mLightIntensity; }
 
-        uint8_t ledIntensity(int index) const { return mIntensity[index]; }
+        uint8_t dimmedIntensity() const { return mDimmedIntensity; }
+
+        uint8_t getColor(int index) const { return mRGB[index]; }
 
 
         void setLightMode(uint8_t mode);
@@ -54,7 +67,11 @@ class LEDDriver {
 
         void setIntensity(uint8_t intensity);
 
-        void setLEDIntensity(int index, uint8_t intensity);
+        void setDimmedIntensity(uint8_t intensity);
+
+        void setColor(uint8_t red, uint8_t green, uint8_t blue);
+
+        void setHSV(uint8_t hue, uint8_t saturation, uint8_t value);
 
         /**
          * Initialize all input ports and routines.

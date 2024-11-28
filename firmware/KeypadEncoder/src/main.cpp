@@ -90,6 +90,11 @@ void sendCommand(uint8_t command, uint8_t value, bool sendI2C = true)
     }
 }
 
+void requestStatus() {
+    clearIRQ(IRQ_STATUS);
+    sendCommand(CommandOpcode::CMD_REQUEST_STATUS, 0, false);
+}
+
 void sendRGBColor(bool sendI2C = true)
 {
     Serial.write(CMD_HEADER | CMD_RGB_COLOR);
@@ -97,18 +102,19 @@ void sendRGBColor(bool sendI2C = true)
     Serial.write(LState.rgb(1));
     Serial.write(LState.rgb(2));
 
-    if (sendI2C) {
-        noInterrupts();
-        if (I2CBufferLength < I2C_BUFFER_SIZE - 3) {
-            I2CBuffer[I2CBufferLength++] = CMD_HEADER | CMD_RGB_COLOR;
-            I2CBuffer[I2CBufferLength++] = LState.rgb(0);
-            I2CBuffer[I2CBufferLength++] = LState.rgb(1);
-            I2CBuffer[I2CBufferLength++] = LState.rgb(2);
-        }
-        interrupts();
-        sendIRQ(IRQ_COMMAND);
-    }
+    requestStatus();
 }
+
+void sendHSVColor(bool sendI2C = true)
+{
+    Serial.write(CMD_HEADER | CMD_HSV_COLOR);
+    Serial.write(LState.rgb(0));
+    Serial.write(LState.rgb(1));
+    Serial.write(LState.rgb(2));
+
+    requestStatus();
+}
+
 
 void processCommand(uint8_t data)
 {
@@ -127,9 +133,11 @@ void processCommand(uint8_t data)
                 // command completely received
                 LState.setLightMode(UARTBuffer[1]);
                 LState.setIntensity(UARTBuffer[2]);
-                LState.setProjectorMode(UARTBuffer[3]);
-                LState.setRGBMode(UARTBuffer[4]);
-                LState.setRGB(UARTBuffer[5], UARTBuffer[6], UARTBuffer[7]);
+                LState.setDimmedIntensity(UARTBuffer[3]);
+                LState.setProjectorMode(UARTBuffer[4]);
+                LState.setRGBMode(UARTBuffer[5]);
+                LState.setRGB(UARTBuffer[6], UARTBuffer[7], UARTBuffer[8]);
+                LState.setHSV(UARTBuffer[9], UARTBuffer[10], UARTBuffer[11]);
 
                 UARTBufferLength = 0;
                 StatusReceived = true;
@@ -160,9 +168,11 @@ void onButtonPress(uint8_t btn, bool longPress)
     switch (btn) {
         case 0: // 3D mode
             sendCommand(CMD_PROJECTOR_MODE, PROJECTOR_3D);
+            sendCommand(CMD_RGB_MODE, RGB_DIMMED);
             break;
         case 1: // VR mode
             sendCommand(CMD_PROJECTOR_MODE, PROJECTOR_VR);
+            sendCommand(CMD_RGB_MODE, RGB_ON);
             break;
         case 2: // Color cycle forward
             if (longPress) {
@@ -170,8 +180,8 @@ void onButtonPress(uint8_t btn, bool longPress)
             } else if (LState.rgbMode() != RGB_ON) {
                 sendCommand(CMD_RGB_MODE, RGB_ON);
             } else {
-                LState.changeRGBHue(longPress ? 32 : 16);
-                sendRGBColor();        
+                LState.changeRGBHue(16);
+                sendHSVColor();
             }
             break;
         case 3: // Color cycle back
@@ -180,8 +190,8 @@ void onButtonPress(uint8_t btn, bool longPress)
             } else if (LState.rgbMode() != RGB_ON) {
                 sendCommand(CMD_RGB_MODE, RGB_ON);
             } else {
-                LState.changeRGBHue(longPress ? 32 : 16);
-                sendRGBColor();        
+                LState.changeRGBHue(-16);
+                sendHSVColor();        
             }
             break;
         case 4: // Fire mode
@@ -192,12 +202,12 @@ void onButtonPress(uint8_t btn, bool longPress)
             sendCommand(CMD_RGB_MODE, longPress ? RGB_ON : RGB_DIMMED);
             break;
         case 6: // RGB saturation down
-            LState.changeRGBSaturation(longPress ? -32 : -16);
-            sendRGBColor();
+            LState.changeRGBSaturation(longPress ? -255 : -16);
+            sendHSVColor();
             break;
         case 7: // RGB saturation up
-            LState.changeRGBSaturation(longPress ? 32 : 16);
-            sendRGBColor();
+            LState.changeRGBSaturation(longPress ? 255 : 16);
+            sendHSVColor();
             break;
         case 8: // Screen down
             if (longPress) {
@@ -253,7 +263,8 @@ void i2cReceive(uint8_t length) {
 
     switch (I2CCommand) {
         case CommandOpcode::CMD_LIGHT_MODE:
-        case CommandOpcode::CMD_LIGHT_INTENSITY:        
+        case CommandOpcode::CMD_LIGHT_INTENSITY:
+        case CommandOpcode::CMD_DIMMED_INTENSITY:
         case CommandOpcode::CMD_RGB_MODE:
         case CommandOpcode::CMD_SCREEN:
         case CommandOpcode::CMD_PROJECTOR_MODE:
@@ -271,14 +282,22 @@ void i2cReceive(uint8_t length) {
                 sendRGBColor(false);
             }
             break;
+        /*
+        case CommandOpcode::CMD_HSV_COLOR:
+            if (Wire.available() > 2) {
+                LState.setHSV(Wire.read(), 
+                              Wire.read(), 
+                              Wire.read());
+                sendHSVColor(false);
+            }
+            break;
+        */
         case CommandOpcode::CMD_REQUEST_STATUS:
-            clearIRQ(IRQ_STATUS);
-            sendCommand(I2CCommand, 0, false);
+            requestStatus();
             break;
         case CommandOpcode::CMD_READ_COMMANDS:
         case CommandOpcode::CMD_READ_STATUS:
             // expect i2c read request after this write
-            break;
             break;
     }
 }
@@ -300,11 +319,17 @@ void i2cRequest()
         case CommandOpcode::CMD_READ_STATUS:
             Wire.write(LState.lightMode());
             Wire.write(LState.lightIntensity());
+            Wire.write(LState.dimmedIntensity());
             Wire.write(LState.projectorMode());
             Wire.write(LState.rgbMode());
             Wire.write(LState.rgb(0));
             Wire.write(LState.rgb(1));
             Wire.write(LState.rgb(2));
+            /*
+            Wire.write(LState.hsv(0));
+            Wire.write(LState.hsv(1));
+            Wire.write(LState.hsv(2));
+            */
 
             clearIRQ(IRQ_STATUS);
             break;

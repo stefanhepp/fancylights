@@ -43,35 +43,41 @@ static const int UART_SPEED_PROJECTOR = 9600;
 static const uint8_t CMD_HEADER = 0x80;
 
 enum CommandOpcode : uint8_t {
-    // Set Light Intensity. Value = 0..127
+    // Set Light Intensity. Value = 0..255.
     CMD_LIGHT_INTENSITY   = 0x01,
 
+    // Set light intensity for dimmed state. Value 0..255.
+    CMD_DIMMED_INTENSITY  = 0x02,
+
     // Set RGB Color. Values = <R> <G> <B>
-    CMD_RGB_COLOR         = 0x02,
+    CMD_RGB_COLOR         = 0x03,
+
+    // Set HSV color. Values = <H> <S> <V> as 0..255
+    CMD_HSV_COLOR         = 0x04,
 
     // Enable/disable lights. Value = <..|1:RGB on|0:Light on>
-    CMD_LIGHT_MODE        = 0x03,
+    CMD_LIGHT_MODE        = 0x05,
 
     // Set RGB mode. Value = RGBMode.
-    CMD_RGB_MODE          = 0x04,
+    CMD_RGB_MODE          = 0x06,
 
     // Projector screen control. Value = LiftCommand.
-    CMD_SCREEN            = 0x05,
+    CMD_SCREEN            = 0x07,
 
     // Projector mode command. Value = ProjectorMode
-    CMD_PROJECTOR_MODE    = 0x07,
+    CMD_PROJECTOR_MODE    = 0x08,
 
     // Projector lift command. Value = LiftCommand.
-    CMD_PROJECTOR_LIFT    = 0x08,
+    CMD_PROJECTOR_LIFT    = 0x09,
 
     // Request status. Value = 0
-    CMD_REQUEST_STATUS    = 0x09,
+    CMD_REQUEST_STATUS    = 0x10,
 
     // Read buttons
-    CMD_READ_COMMANDS     = 0x10,
+    CMD_READ_COMMANDS     = 0x11,
 
     // Read Status.
-    CMD_READ_STATUS       = 0x11
+    CMD_READ_STATUS       = 0x12
 };
 
 enum RGBMode : uint8_t {

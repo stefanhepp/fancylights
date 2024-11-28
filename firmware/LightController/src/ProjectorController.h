@@ -29,7 +29,9 @@ class ProjectorController {
 
         uint8_t mode() const { return mMode; }
 
-        void move(uint8_t direction);
+        void moveProjector(uint8_t direction);
+
+        void moveScreen(uint8_t direction);
 
         /**
          * Initialize all input ports and routines.
@@ -37,5 +39,4 @@ class ProjectorController {
         void begin();
 
         void loop();
-
 };

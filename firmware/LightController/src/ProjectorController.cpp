@@ -24,7 +24,12 @@ void ProjectorController::setMode(uint8_t mode)
     mMode = mode;
 }
 
-void ProjectorController::move(uint8_t direction)
+void ProjectorController::moveProjector(uint8_t direction)
+{
+    
+}
+
+void ProjectorController::moveScreen(uint8_t direction)
 {
     
 }

@@ -31,11 +31,12 @@ void sendStatus()
     Serial.write(CMD_HEADER | CMD_READ_STATUS);
     Serial.write(LEDs.lightMode());
     Serial.write(LEDs.intensity());
+    Serial.write(LEDs.dimmedIntensity());
     Serial.write(Projector.mode());
     Serial.write(LEDs.rgbMode());
-    Serial.write(LEDs.ledIntensity(LED_R));
-    Serial.write(LEDs.ledIntensity(LED_G));
-    Serial.write(LEDs.ledIntensity(LED_B));
+    Serial.write(LEDs.getColor(LED_R));
+    Serial.write(LEDs.getColor(LED_G));
+    Serial.write(LEDs.getColor(LED_B));
 }
 
 void processCommand(uint8_t data)
@@ -56,11 +57,15 @@ void processCommand(uint8_t data)
                 UARTBufferLength = 0;
             }
             break;
+        case CMD_DIMMED_INTENSITY:
+            if (UARTBufferLength >= 2) {
+                LEDs.setDimmedIntensity(UARTBuffer[1]);
+                UARTBufferLength = 0;
+            }
+            break;
         case CMD_RGB_COLOR:
             if (UARTBufferLength >= 4) {
-                LEDs.setLEDIntensity(LED_R, UARTBuffer[1]);
-                LEDs.setLEDIntensity(LED_G, UARTBuffer[2]);
-                LEDs.setLEDIntensity(LED_B, UARTBuffer[3]);
+                LEDs.setColor(UARTBuffer[1], UARTBuffer[2], UARTBuffer[3]);
                 UARTBufferLength = 0;
             }
             break;
@@ -78,8 +83,7 @@ void processCommand(uint8_t data)
             break;
         case CMD_SCREEN:
             if (UARTBufferLength >= 2) {
-                // TODO screen up/down 
-
+                Projector.moveScreen(UARTBuffer[1]);
                 UARTBufferLength = 0;
             }
             break;
@@ -91,7 +95,7 @@ void processCommand(uint8_t data)
             break;
         case CMD_PROJECTOR_LIFT:
             if (UARTBufferLength >= 2) {
-                Projector.move(UARTBuffer[1]);
+                Projector.moveProjector(UARTBuffer[1]);
                 UARTBufferLength = 0;
             }
             break;
@@ -136,12 +140,15 @@ void loop() {
         processCommand(data);
     }
 
-    LEDs.updateLEDs();
+    bool wrapAround = LEDs.updateLEDs();
+
     digitalWrite(PIN_R, LEDs.getLEDStatus(LED_R));
     digitalWrite(PIN_G, LEDs.getLEDStatus(LED_G));
     digitalWrite(PIN_B, LEDs.getLEDStatus(LED_B));
     digitalWrite(PIN_LAMP1, LEDs.getLEDStatus(LED_LAMP1));
     digitalWrite(PIN_LAMP2, LEDs.getLEDStatus(LED_LAMP2));
 
-    Projector.loop();
+    if (wrapAround) {
+        Projector.loop();
+    }
 }

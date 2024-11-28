@@ -14,9 +14,10 @@
 
 #include <avr/eeprom.h>
 
-uint8_t EEMEM confIntensity[5];
+uint8_t EEMEM confColor[3];
 uint8_t EEMEM confLightMode;
 uint8_t EEMEM confLightIntensity;
+uint8_t EEMEM confDimmedIntensity;
 uint8_t EEMEM confRGBMode;
 
 Settings::Settings()
@@ -55,12 +56,22 @@ void Settings::setIntensity(uint8_t value)
     eeprom_write_byte(&confLightIntensity, value);
 }
 
-uint8_t Settings::getLEDIntensity(int index)
+uint8_t Settings::dimmedIntensity()
 {
-    return eeprom_read_byte(&confIntensity[index]);
+    return eeprom_read_byte(&confDimmedIntensity);
 }
 
-void Settings::setLEDIntensity(int index, uint8_t intensity)
+void Settings::setDimmedIntensity(uint8_t value)
 {
-    eeprom_write_byte(&confIntensity[index], intensity);
+    eeprom_write_byte(&confDimmedIntensity, value);
+}
+
+uint8_t Settings::getColor(int index)
+{
+    return eeprom_read_byte(&confColor[index]);
+}
+
+void Settings::setColor(int index, uint8_t intensity)
+{
+    eeprom_write_byte(&confColor[index], intensity);
 }
