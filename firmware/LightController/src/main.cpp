@@ -151,11 +151,11 @@ void loop() {
 
     bool wrapAround = LEDs.updateLEDs();
 
-    digitalWrite(PIN_R, LEDs.getLEDStatus(LED_R));
-    digitalWrite(PIN_G, LEDs.getLEDStatus(LED_G));
-    digitalWrite(PIN_B, LEDs.getLEDStatus(LED_B));
-    digitalWrite(PIN_LAMP1, LEDs.getLEDStatus(LED_LAMP1));
-    digitalWrite(PIN_LAMP2, LEDs.getLEDStatus(LED_LAMP2));
+    digitalWrite(PIN_R, !LEDs.getLEDStatus(LED_R));
+    digitalWrite(PIN_G, !LEDs.getLEDStatus(LED_G));
+    digitalWrite(PIN_B, !LEDs.getLEDStatus(LED_B));
+    digitalWrite(PIN_LAMP1, !LEDs.getLEDStatus(LED_LAMP1));
+    digitalWrite(PIN_LAMP2, !LEDs.getLEDStatus(LED_LAMP2));
 
     if (wrapAround) {
         Projector.loop();

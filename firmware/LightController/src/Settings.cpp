@@ -58,7 +58,8 @@ void Settings::setIntensity(uint8_t value)
 
 uint8_t Settings::dimmedIntensity()
 {
-    return eeprom_read_byte(&confDimmedIntensity);
+    uint8_t value = eeprom_read_byte(&confDimmedIntensity);
+    return value != 0xFF ? value : 40;
 }
 
 void Settings::setDimmedIntensity(uint8_t value)

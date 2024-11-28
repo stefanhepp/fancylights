@@ -95,6 +95,10 @@ void LEDDriver::recalculate()
         mIntensity[LED_R] = (((int)mRGB[LED_R])*intensity)/255;
         mIntensity[LED_G] = (((int)mRGB[LED_G])*intensity)/255;
         mIntensity[LED_B] = (((int)mRGB[LED_B])*intensity)/255;
+    } else {
+        mIntensity[LED_R] = 0;
+        mIntensity[LED_G] = 0;
+        mIntensity[LED_B] = 0;
     }
 }
 
