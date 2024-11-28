@@ -79,7 +79,7 @@ void LEDDriver::hsvToRgb()
 
 void LEDDriver::recalculate()
 {
-    if (mLightMode | 0x01) {
+    if (mLightMode & 0x01) {
         uint8_t intensity = mRGBMode == RGBMode::RGB_DIMMED ? mDimmedIntensity : mLightIntensity;
 
         mIntensity[LED_LAMP1] = intensity;
@@ -89,7 +89,7 @@ void LEDDriver::recalculate()
         mIntensity[LED_LAMP2] = 0;
     }
 
-    if (mLightMode | 0x02) {
+    if (mLightMode & 0x02) {
         int intensity = mRGBMode == RGBMode::RGB_DIMMED ? mDimmedIntensity : 255;
 
         mIntensity[LED_R] = (((int)mRGB[LED_R])*intensity)/255;

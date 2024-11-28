@@ -37,6 +37,9 @@ void sendStatus()
     Serial.write(LEDs.getColor(LED_R));
     Serial.write(LEDs.getColor(LED_G));
     Serial.write(LEDs.getColor(LED_B));
+    Serial.write(LEDs.getHSV(0));
+    Serial.write(LEDs.getHSV(1));
+    Serial.write(LEDs.getHSV(2));
 }
 
 void processCommand(uint8_t data)
@@ -50,7 +53,7 @@ void processCommand(uint8_t data)
         UARTBuffer[UARTBufferLength++] = data;
     }
 
-    switch (UARTBuffer[0]) {
+    switch (UARTBuffer[0] & ~CMD_HEADER) {
         case CMD_LIGHT_INTENSITY:
             if (UARTBufferLength >= 2) {
                 LEDs.setIntensity(UARTBuffer[1]);
@@ -66,6 +69,12 @@ void processCommand(uint8_t data)
         case CMD_RGB_COLOR:
             if (UARTBufferLength >= 4) {
                 LEDs.setColor(UARTBuffer[1], UARTBuffer[2], UARTBuffer[3]);
+                UARTBufferLength = 0;
+            }
+            break;
+        case CMD_HSV_COLOR:
+            if (UARTBufferLength >= 4) {
+                LEDs.setHSV(UARTBuffer[1], UARTBuffer[2], UARTBuffer[3]);
                 UARTBufferLength = 0;
             }
             break;

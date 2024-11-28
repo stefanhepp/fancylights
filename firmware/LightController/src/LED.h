@@ -60,6 +60,8 @@ class LEDDriver {
 
         uint8_t getColor(int index) const { return mRGB[index]; }
 
+        uint8_t getHSV(int component) const { return mHSV[component]; }
+
 
         void setLightMode(uint8_t mode);
 

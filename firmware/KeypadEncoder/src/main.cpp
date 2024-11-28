@@ -108,9 +108,9 @@ void sendRGBColor(bool sendI2C = true)
 void sendHSVColor(bool sendI2C = true)
 {
     Serial.write(CMD_HEADER | CMD_HSV_COLOR);
-    Serial.write(LState.rgb(0));
-    Serial.write(LState.rgb(1));
-    Serial.write(LState.rgb(2));
+    Serial.write(LState.hsv(0));
+    Serial.write(LState.hsv(1));
+    Serial.write(LState.hsv(2));
 
     requestStatus();
 }
@@ -127,9 +127,9 @@ void processCommand(uint8_t data)
         UARTBuffer[UARTBufferLength++] = data;
     }
 
-    switch (UARTBuffer[0]) {
+    switch (UARTBuffer[0] & ~CMD_HEADER) {
         case CMD_READ_STATUS:
-            if (UARTBufferLength >= 8) {
+            if (UARTBufferLength >= 12) {
                 // command completely received
                 LState.setLightMode(UARTBuffer[1]);
                 LState.setIntensity(UARTBuffer[2]);
@@ -163,8 +163,6 @@ void processCommand(uint8_t data)
 
 void onButtonPress(uint8_t btn, bool longPress)
 {
-    sendCommand(1, btn | (longPress ? 0x80 : 0) );
-
     switch (btn) {
         case 0: // 3D mode
             sendCommand(CMD_PROJECTOR_MODE, PROJECTOR_3D);
