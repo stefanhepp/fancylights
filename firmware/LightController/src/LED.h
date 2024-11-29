@@ -43,8 +43,6 @@ class LEDDriver {
 
         void recalculate();
 
-        void rgbToHsv();
-
         void hsvToRgb();
 
     public:
@@ -70,8 +68,6 @@ class LEDDriver {
         void setIntensity(uint8_t intensity);
 
         void setDimmedIntensity(uint8_t intensity);
-
-        void setColor(uint8_t red, uint8_t green, uint8_t blue);
 
         void setHSV(uint8_t hue, uint8_t saturation, uint8_t value);
 

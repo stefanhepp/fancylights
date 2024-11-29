@@ -34,12 +34,14 @@ void sendStatus()
     Serial.write(LEDs.dimmedIntensity());
     Serial.write(Projector.mode());
     Serial.write(LEDs.rgbMode());
-    Serial.write(LEDs.getColor(LED_R));
-    Serial.write(LEDs.getColor(LED_G));
-    Serial.write(LEDs.getColor(LED_B));
     Serial.write(LEDs.getHSV(0));
     Serial.write(LEDs.getHSV(1));
     Serial.write(LEDs.getHSV(2));
+
+    Serial.write(LEDs.getColor(0));
+    Serial.write(LEDs.getColor(1));
+    Serial.write(LEDs.getColor(2));
+
 }
 
 void processCommand(uint8_t data)
@@ -63,12 +65,6 @@ void processCommand(uint8_t data)
         case CMD_DIMMED_INTENSITY:
             if (UARTBufferLength >= 2) {
                 LEDs.setDimmedIntensity(UARTBuffer[1]);
-                UARTBufferLength = 0;
-            }
-            break;
-        case CMD_RGB_COLOR:
-            if (UARTBufferLength >= 4) {
-                LEDs.setColor(UARTBuffer[1], UARTBuffer[2], UARTBuffer[3]);
                 UARTBufferLength = 0;
             }
             break;

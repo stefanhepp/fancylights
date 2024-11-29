@@ -28,53 +28,130 @@ LEDDriver::LEDDriver(Settings &settings)
     }
 }
 
-void LEDDriver::rgbToHsv()
-{
-    int Cmax = max(mRGB[0], max(mRGB[1], mRGB[2]));
-    int Cmin = min(mRGB[0], min(mRGB[1], mRGB[2]));
 
-    int delta = Cmax - Cmin;
+#define HSV_HUE_SEXTANT		256
+#define HSV_HUE_STEPS		(6 * HSV_HUE_SEXTANT)
 
-    mHSV[0] = delta == 0 ? 0 :
-              Cmax == mRGB[LED_R] ? 43 * (((mRGB[LED_G] - mRGB[LED_B]) / delta) % 6) :
-              Cmax == mRGB[LED_G] ? 43 * (((mRGB[LED_B] - mRGB[LED_R]) / delta) + 2 ) :
-                                    43 * (((mRGB[LED_R] - mRGB[LED_G]) / delta) + 4 ) ;
+#define HSV_HUE_MIN		0
+#define HSV_HUE_MAX		(HSV_HUE_STEPS - 1)
+#define HSV_SAT_MIN		0
+#define HSV_SAT_MAX		255
+#define HSV_VAL_MIN		0
+#define HSV_VAL_MAX		255
 
-    mHSV[1] = Cmax == 0 ? 0 : ((int)delta * 255) / Cmax;
-    mHSV[2] = Cmax;
-}
+/********************************************************************* 
+ * HSV to RGB calculation, using implementation from:
+ * https://www.vagrearg.org/content/hsvrgb
+ * Copyright (c) 2016  B. Stultiens
+ *********************************************************************/
+/*
+ * Pointer swapping:
+ * 	sext.	r g b	r<>b	g<>b	r <> g	result
+ *	0 0 0	v u c			!u v c	u v c
+ *	0 0 1	d v c				d v c
+ *	0 1 0	c v u	u v c			u v c
+ *	0 1 1	c d v	v d c		d v c	d v c
+ *	1 0 0	u c v		u v c		u v c
+ *	1 0 1	v c d		v d c	d v c	d v c
+ *
+ * if(sextant & 2)
+ * 	r <-> b
+ *
+ * if(sextant & 4)
+ * 	g <-> b
+ *
+ * if(!(sextant & 6) {
+ * 	if(!(sextant & 1))
+ * 		r <-> g
+ * } else {
+ * 	if(sextant & 1)
+ * 		r <-> g
+ * }
+ */
+#define HSV_SWAPPTR(a,b)	do { uint8_t *tmp = (a); (a) = (b); (b) = tmp; } while(0)
+#define HSV_POINTER_SWAP(sextant,r,g,b) \
+	do { \
+		if((sextant) & 2) { \
+			HSV_SWAPPTR((r), (b)); \
+		} \
+		if((sextant) & 4) { \
+			HSV_SWAPPTR((g), (b)); \
+		} \
+		if(!((sextant) & 6)) { \
+			if(!((sextant) & 1)) { \
+				HSV_SWAPPTR((r), (g)); \
+			} \
+		} else { \
+			if((sextant) & 1) { \
+				HSV_SWAPPTR((r), (g)); \
+			} \
+		} \
+	} while(0)
+
 
 void LEDDriver::hsvToRgb()
 {
-    int C = ((int)mHSV[1] * (int)mHSV[2]) / 255;
-    int X = C * (1 - abs((mHSV[0] / 43) % 2 - 1));
-    int m = mHSV[2] - C;
+    uint16_t h = mHSV[0];
+    uint8_t  s = mHSV[1];
+    uint8_t  v = mHSV[2];
 
-    int r,g,b;
-    switch (mHSV[0]/43) {
-        case 0:
-            r = C; g = X; b = 0;
-            break;
-        case 1:
-            r = X; g = C; b = 0;
-            break;
-        case 2:
-            r = 0; g = C; b = X;
-            break;
-        case 3:
-            r = 0; g = X; b = C;
-            break;
-        case 4:
-            r = X; g = 0; b = C;
-            break;
-        case 5:
-            r = C; g = 0; b = X;
-            break;
+    uint8_t *r = &mRGB[0];
+    uint8_t *g = &mRGB[1];
+    uint8_t *b = &mRGB[2];
+
+    if (s == 0) {
+        mRGB[0] = mRGB[1] = mRGB[2] = v;
     }
 
-    mRGB[LED_R] = r + m;
-    mRGB[LED_G] = g + m;
-    mRGB[LED_B] = b + m;
+    uint8_t sextant = h >> 8;
+
+	HSV_POINTER_SWAP(sextant, r, g, b);	// Swap pointers depending which sextant we are in
+
+	*g = v;		// Top level
+
+	// Perform actual calculations
+	uint8_t bb;
+	uint16_t ww;
+
+	/*
+	 * Bottom level: v * (1.0 - s)
+	 * --> (v * (255 - s) + error_corr) / 256
+	 */
+	bb = ~s;
+	ww = v * bb;
+	ww += 1;		// Error correction
+	ww += ww >> 8;		// Error correction
+	*b = ww >> 8;
+
+	uint8_t h_fraction = h & 0xff;	// 0...255
+
+	if(!(sextant & 1)) {
+		// *r = ...slope_up...;
+		/*
+		 * Slope up: v * (1.0 - s * (1.0 - h))
+		 * --> (v * (255 - (s * (256 - h) + error_corr1) / 256) + error_corr2) / 256
+		 */
+		ww = !h_fraction ? ((uint16_t)s << 8) : (s * (uint8_t)(-h_fraction));
+		ww += ww >> 8;		// Error correction 1
+		bb = ww >> 8;
+		bb = ~bb;
+		ww = v * bb;
+		ww += v >> 1;		// Error correction 2
+		*r = ww >> 8;
+	} else {
+		// *r = ...slope_down...;
+		/*
+		 * Slope down: v * (1.0 - s * h)
+		 * --> (v * (255 - (s * h + error_corr1) / 256) + error_corr2) / 256
+		 */
+		ww = s * h_fraction;
+		ww += ww >> 8;		// Error correction 1
+		bb = ww >> 8;
+		bb = ~bb;
+		ww = v * bb;
+		ww += v >> 1;		// Error correction 2
+		*r = ww >> 8;
+	}
 }
 
 void LEDDriver::recalculate()
@@ -130,26 +207,14 @@ void LEDDriver::setDimmedIntensity(uint8_t value)
     recalculate();
 }
 
-void LEDDriver::setColor(uint8_t red, uint8_t green, uint8_t blue)
-{
-    mRGB[LED_R] = red;
-    mRGB[LED_G] = green;
-    mRGB[LED_B] = blue;
-    mSettings.setColor(LED_R, red);
-    mSettings.setColor(LED_G, green);
-    mSettings.setColor(LED_B, blue);
-    rgbToHsv();
-    recalculate();
-}
-
 void LEDDriver::setHSV(uint8_t hue, uint8_t saturation, uint8_t value)
 {
     mHSV[0] = hue;
     mHSV[1] = saturation;
     mHSV[2] = value;
-    mSettings.setColor(3, hue);
-    mSettings.setColor(4, saturation);
-    mSettings.setColor(5, value);
+    mSettings.setHSV(0, hue);
+    mSettings.setHSV(1, saturation);
+    mSettings.setHSV(2, value);
     hsvToRgb();
     recalculate();
 }
@@ -161,9 +226,9 @@ void LEDDriver::begin()
     mDimmedIntensity = mSettings.dimmedIntensity();
     mRGBMode = mSettings.rgbMode();
     for (int i = 0; i < 3; i++) {
-        mRGB[i] = mSettings.getColor(i);
+        mHSV[i] = mSettings.getHSV(i);
     }
-    rgbToHsv();
+    hsvToRgb();
 
     // no output, 8-bit normal PWM
     TCCR2A = 0;

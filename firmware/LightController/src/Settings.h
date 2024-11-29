@@ -27,7 +27,7 @@ class Settings
 
         uint8_t dimmedIntensity();
 
-        uint8_t getColor(int index);
+        uint8_t getHSV(int index);
 
 
         void setLightMode(uint8_t mode);
@@ -38,7 +38,7 @@ class Settings
 
         void setDimmedIntensity(uint8_t intensity);
 
-        void setColor(int index, uint8_t intensity);
+        void setHSV(int index, uint8_t intensity);
 };
 
 #endif

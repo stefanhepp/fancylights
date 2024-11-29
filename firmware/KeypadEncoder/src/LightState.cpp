@@ -24,7 +24,7 @@ LightState::LightState()
     mDimmedIntensity = 50;
     mRGBMode = RGB_ON;
     mProjectorMode = PROJECTOR_OFF;
-    // Don't initialize mRGB and mHSV to save space. Will be initialzed by first received status message.
+    // Don't initialize mHSV to save space. Will be initialzed by first received status message.
 }
 
 void LightState::begin()
@@ -52,7 +52,7 @@ void LightState::changeIntensity(int delta)
     }
 }
 
-void LightState::changeRGBSaturation(int delta)
+void LightState::changeHSVSaturation(int delta)
 {
     mHSV[1] += delta;
     if (mHSV[1] < 0) {
@@ -63,7 +63,7 @@ void LightState::changeRGBSaturation(int delta)
     }
 }
 
-void LightState::changeRGBHue(int delta)
+void LightState::changeHSVHue(int delta)
 {
     mHSV[0] += delta;
     if (mHSV[0] < 0) {
@@ -72,13 +72,6 @@ void LightState::changeRGBHue(int delta)
     if (mHSV[0] > 255) {
         mHSV[0] -= 255;
     }    
-}
-
-void LightState::setRGB(uint8_t red, uint8_t green, uint8_t blue)
-{
-    mRGB[0] = red;
-    mRGB[1] = green;
-    mRGB[2] = blue;
 }
 
 void LightState::setHSV(uint8_t hue, uint8_t saturation, uint8_t value)

@@ -67,12 +67,12 @@ void Settings::setDimmedIntensity(uint8_t value)
     eeprom_write_byte(&confDimmedIntensity, value);
 }
 
-uint8_t Settings::getColor(int index)
+uint8_t Settings::getHSV(int index)
 {
     return eeprom_read_byte(&confColor[index]);
 }
 
-void Settings::setColor(int index, uint8_t intensity)
+void Settings::setHSV(int index, uint8_t intensity)
 {
     eeprom_write_byte(&confColor[index], intensity);
 }
