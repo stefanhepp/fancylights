@@ -47,12 +47,12 @@ LEDDriver::LEDDriver(Settings &settings)
 /*
  * Pointer swapping:
  * 	sext.	r g b	r<>b	g<>b	r <> g	result
- *	0 0 0	v u c			!u v c	u v c
- *	0 0 1	d v c				d v c
- *	0 1 0	c v u	u v c			u v c
- *	0 1 1	c d v	v d c		d v c	d v c
- *	1 0 0	u c v		u v c		u v c
- *	1 0 1	v c d		v d c	d v c	d v c
+ *	0 0 0	v u c			        !u v c	u v c
+ *	0 0 1	d v c				            d v c
+ *	0 1 0	c v u	u v c			        u v c
+ *	0 1 1	c d v	v d c		     d v c	d v c
+ *	1 0 0	u c v		     u v c		    u v c
+ *	1 0 1	v c d		     v d c	 d v c	d v c
  *
  * if(sextant & 2)
  * 	r <-> b
@@ -91,7 +91,7 @@ LEDDriver::LEDDriver(Settings &settings)
 
 void LEDDriver::hsvToRgb()
 {
-    uint16_t h = mHSV[0];
+    uint16_t h = mHSV[0] * 6;
     uint8_t  s = mHSV[1];
     uint8_t  v = mHSV[2];
 
@@ -105,7 +105,7 @@ void LEDDriver::hsvToRgb()
 
     uint8_t sextant = h >> 8;
 
-	HSV_POINTER_SWAP(sextant, r, g, b);	// Swap pointers depending which sextant we are in
+    HSV_POINTER_SWAP(sextant, r, g, b);     // Swap pointers depending which sextant we are in
 
 	*g = v;		// Top level
 
