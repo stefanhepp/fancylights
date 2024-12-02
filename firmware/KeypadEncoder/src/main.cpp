@@ -212,10 +212,12 @@ void onButtonPress(uint8_t btn, bool longPress)
         case 10: // Intensity down
             LState.changeIntensity(longPress ? -255 : -16);
             sendCommand(CMD_LIGHT_INTENSITY, LState.lightIntensity());
+            sendHSVColor();
             break;
         case 11: // Intensity up
             LState.changeIntensity(longPress ? 255 : 16);
             sendCommand(CMD_LIGHT_INTENSITY, LState.lightIntensity());
+            sendHSVColor();
             break;
         case 12: // Projector down
             if (longPress) {

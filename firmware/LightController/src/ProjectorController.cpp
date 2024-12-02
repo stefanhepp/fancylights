@@ -10,6 +10,8 @@
  */
 #include "ProjectorController.h"
 
+#include <commands.h>
+
 #include "config.h"
 
 ProjectorController::ProjectorController(Settings &settings)
@@ -31,7 +33,18 @@ void ProjectorController::moveProjector(uint8_t direction)
 
 void ProjectorController::moveScreen(uint8_t direction)
 {
-    
+    mCntPulse = 50;
+    if (direction == LiftCommand::LIFT_UP || direction == LiftCommand::LIFT_STOP) {
+        digitalWrite(PIN_SCREEN_UP, HIGH);
+    }
+    if (direction == LiftCommand::LIFT_DOWN || direction == LiftCommand::LIFT_STOP) {
+        digitalWrite(PIN_SCREEN_DOWN, HIGH);
+    }
+}
+
+void ProjectorController::requestStatus()
+{
+
 }
 
 void ProjectorController::begin()
@@ -40,6 +53,13 @@ void ProjectorController::begin()
     pinMode(PIN_SW_TXD, OUTPUT);
 
     digitalWrite(PIN_SW_TXD, HIGH);
+
+
+    pinMode(PIN_SCREEN_UP, OUTPUT);
+    pinMode(PIN_SCREEN_DOWN, OUTPUT);
+
+    digitalWrite(PIN_SCREEN_UP, LOW);
+    digitalWrite(PIN_SCREEN_DOWN, LOW);
 
     pinMode(PIN_WINCH_SWITCH, INPUT_PULLUP);
     pinMode(PIN_MOTOR_IN1, OUTPUT);
@@ -51,5 +71,11 @@ void ProjectorController::begin()
 
 void ProjectorController::loop()
 {
-
+    if (mCntPulse > 0) {
+        mCntPulse--;
+        if (mCntPulse == 0) {
+            digitalWrite(PIN_SCREEN_UP, LOW);
+            digitalWrite(PIN_SCREEN_DOWN, LOW);
+        }
+    }
 }

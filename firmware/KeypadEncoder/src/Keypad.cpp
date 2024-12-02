@@ -87,5 +87,5 @@ void Keypad::poll()
         digitalWrite(PIN_ROWS[row], HIGH);
     }
 
-    delay(2);
+    delay(10);
 }

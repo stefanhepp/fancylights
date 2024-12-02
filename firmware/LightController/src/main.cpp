@@ -26,6 +26,8 @@ static const int UART_BUFFER_SIZE = 16;
 static uint8_t UARTBuffer[UART_BUFFER_SIZE];
 static uint8_t UARTBufferLength = 0;
 
+uint8_t CntStatusTimeout = 0;
+
 void sendStatus()
 {
     Serial.write(CMD_HEADER | CMD_READ_STATUS);
@@ -42,6 +44,11 @@ void sendStatus()
     Serial.write(LEDs.getColor(1));
     Serial.write(LEDs.getColor(2));
 
+}
+
+void onProjectorStatus(bool powerOn) {
+    CntStatusTimeout = 0;
+    sendStatus();
 }
 
 void processCommand(uint8_t data)
@@ -106,7 +113,8 @@ void processCommand(uint8_t data)
             break;
         case CMD_REQUEST_STATUS:
             if (UARTBufferLength >= 2) {
-                sendStatus();
+                Projector.requestStatus();
+                CntStatusTimeout = 10;
                 UARTBufferLength = 0;
             }
             break;
@@ -129,21 +137,15 @@ void setup() {
     pinMode(PIN_PD4, INPUT_PULLUP);
     pinMode(PIN_PD7, INPUT_PULLUP);
 
-    pinMode(PIN_SCREEN_UP, OUTPUT);
-    pinMode(PIN_SCREEN_DOWN, OUTPUT);
-
     LEDs.begin();
+
+    Projector.setStatusCallback(onProjectorStatus);
     Projector.begin();
 
     Serial.begin(UART_SPEED_CONTROLLER);
 }
 
 void loop() {
-    while (Serial.available()) {
-        int data = Serial.read();
-
-        processCommand(data);
-    }
 
     bool wrapAround = LEDs.updateLEDs();
 
@@ -154,6 +156,19 @@ void loop() {
     digitalWrite(PIN_LAMP2, !LEDs.getLEDStatus(LED_LAMP2));
 
     if (wrapAround) {
+        while (Serial.available()) {
+            int data = Serial.read();
+
+            processCommand(data);
+        }
+
+        if (CntStatusTimeout > 0) {
+            CntStatusTimeout--;
+            if (CntStatusTimeout == 0) {
+                sendStatus();
+            }
+        }
+
         Projector.loop();
     }
 }

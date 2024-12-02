@@ -167,11 +167,11 @@ void LEDDriver::recalculate()
     }
 
     if (mLightMode & 0x02) {
-        int intensity = mRGBMode == RGBMode::RGB_DIMMED ? mDimmedIntensity : 255;
+        uint16_t intensity = mRGBMode == RGBMode::RGB_DIMMED ? mDimmedIntensity : 256;
 
-        mIntensity[LED_R] = (((int)mRGB[LED_R])*intensity)/255;
-        mIntensity[LED_G] = (((int)mRGB[LED_G])*intensity)/255;
-        mIntensity[LED_B] = (((int)mRGB[LED_B])*intensity)/255;
+        mIntensity[LED_R] = (((uint16_t)mRGB[LED_R])*intensity)/256;
+        mIntensity[LED_G] = (((uint16_t)mRGB[LED_G])*intensity)/256;
+        mIntensity[LED_B] = (((uint16_t)mRGB[LED_B])*intensity)/256;
     } else {
         mIntensity[LED_R] = 0;
         mIntensity[LED_G] = 0;

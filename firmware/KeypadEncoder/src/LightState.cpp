@@ -50,6 +50,8 @@ void LightState::changeIntensity(int delta)
     if (mLightIntensity > 255) {
         mLightIntensity = 255;
     }
+    // Adapt RGB light intensity to main intensity when set via keypad
+    mHSV[2] = mLightIntensity;
 }
 
 void LightState::changeHSVSaturation(int delta)
