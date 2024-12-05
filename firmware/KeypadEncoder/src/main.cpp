@@ -177,22 +177,22 @@ void onButtonPress(uint8_t btn, bool longPress)
                 sendCommand(CMD_RGB_MODE, RGB_ON);
             } else {
                 LState.changeHSVHue(-16);
-                sendHSVColor();        
+                sendHSVColor();
             }
             break;
         case 4: // Fire mode
-            sendCommand(CMD_RGB_MODE, RGB_FIRE);        
+            sendCommand(CMD_RGB_MODE, RGB_FIRE);
             break;
         case 5: // Movie mode
             sendCommand(CMD_PROJECTOR_MODE, PROJECTOR_NORMAL);
             sendCommand(CMD_RGB_MODE, longPress ? RGB_ON : RGB_DIMMED);
             break;
         case 6: // RGB saturation down
-            LState.changeHSVSaturation(longPress ? -255 : -16);
+            LState.changeHSVSaturation(longPress ? -255 : -32);
             sendHSVColor();
             break;
         case 7: // RGB saturation up
-            LState.changeHSVSaturation(longPress ? 255 : 16);
+            LState.changeHSVSaturation(longPress ? 255 : 32);
             sendHSVColor();
             break;
         case 8: // Screen down
@@ -210,12 +210,12 @@ void onButtonPress(uint8_t btn, bool longPress)
             }        
             break;
         case 10: // Intensity down
-            LState.changeIntensity(longPress ? -255 : -16);
+            LState.changeIntensity(longPress ? -255 : -32);
             sendCommand(CMD_LIGHT_INTENSITY, LState.lightIntensity());
             sendHSVColor();
             break;
         case 11: // Intensity up
-            LState.changeIntensity(longPress ? 255 : 16);
+            LState.changeIntensity(longPress ? 255 : 32);
             sendCommand(CMD_LIGHT_INTENSITY, LState.lightIntensity());
             sendHSVColor();
             break;

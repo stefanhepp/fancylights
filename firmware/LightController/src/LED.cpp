@@ -246,7 +246,7 @@ bool LEDDriver::updateLEDs() {
     bool wrapAround = mPWMCounter < mLastCounter;
 
     if (wrapAround) {
-        mCycleCounter = (mCycleCounter + 1) % 4;
+        mCycleCounter = (mCycleCounter + 1) % 8;
 
         if (mCycleCounter == 0 && mRGBMode == RGBMode::RGB_CYCLE) {
             mHSV[0]++;
