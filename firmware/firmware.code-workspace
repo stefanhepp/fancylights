@@ -9,8 +9,12 @@
 			"path": "KeypadEncoder"
 		},
 		{
-			"name": "LightController",
-			"path": "LightController"
+			"name": "FancyController",
+			"path": "FancyController"
+		},
+		{
+			"name": "MainController",
+			"path": "MainController"
 		},
 		{
 			"name": "ProjectorController",
