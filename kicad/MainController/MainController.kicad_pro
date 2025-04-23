@@ -58,7 +58,16 @@
           "width": 0.0
         }
       ],
-      "drc_exclusions": [],
+      "drc_exclusions": [
+        [
+          "silk_over_copper|123167538|137084207|2ebfb3c0-77e2-41f1-a1f2-56bffaf41140|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "silk_over_copper|124706171|135717085|2ad94ccd-dcef-4898-9e83-46b49a485c27|00000000-0000-0000-0000-000000000000",
+          ""
+        ]
+      ],
       "meta": {
         "version": 2
       },
@@ -137,7 +146,7 @@
         "min_text_thickness": 0.08,
         "min_through_hole_diameter": 0.8,
         "min_track_width": 0.3,
-        "min_via_annular_width": 0.35,
+        "min_via_annular_width": 0.25,
         "min_via_diameter": 1.7,
         "solder_mask_to_copper_clearance": 0.0,
         "use_height_for_length_calcs": true
@@ -190,7 +199,8 @@
         0.0,
         0.3,
         0.4,
-        0.5
+        0.5,
+        0.8
       ],
       "tuning_pattern_settings": {
         "diff_pair_defaults": {
@@ -446,7 +456,7 @@
       "no_connect_dangling": "warning",
       "pin_not_connected": "error",
       "pin_not_driven": "error",
-      "pin_to_pin": "warning",
+      "pin_to_pin": "error",
       "power_pin_not_driven": "error",
       "same_local_global_label": "warning",
       "similar_label_and_power": "warning",
@@ -484,10 +494,24 @@
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 2147483647,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
-        "track_width": 0.3,
+        "track_width": 0.4,
         "via_diameter": 1.8,
         "via_drill": 0.8,
         "wire_width": 6
+      },
+      {
+        "clearance": 0.4,
+        "diff_pair_gap": 0.25,
+        "diff_pair_width": 0.3,
+        "microvia_diameter": 0.5,
+        "microvia_drill": 0.1,
+        "name": "12V",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 0,
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.8,
+        "via_diameter": 1.9,
+        "via_drill": 0.8
       },
       {
         "bus_width": 12,
@@ -499,9 +523,9 @@
         "microvia_drill": 0.1,
         "name": "Power",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 0,
+        "priority": 1,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
-        "track_width": 0.5,
+        "track_width": 0.6,
         "via_diameter": 1.9,
         "via_drill": 0.8,
         "wire_width": 6
@@ -512,7 +536,32 @@
     },
     "net_colors": null,
     "netclass_assignments": null,
-    "netclass_patterns": []
+    "netclass_patterns": [
+      {
+        "netclass": "Power",
+        "pattern": "+3.3V"
+      },
+      {
+        "netclass": "12V",
+        "pattern": "+12V"
+      },
+      {
+        "netclass": "Power",
+        "pattern": "GND"
+      },
+      {
+        "netclass": "Power",
+        "pattern": "+5V"
+      },
+      {
+        "netclass": "12V",
+        "pattern": "/PowerConnectors/M*"
+      },
+      {
+        "netclass": "12V",
+        "pattern": "*/LED_*"
+      }
+    ]
   },
   "pcbnew": {
     "last_paths": {
