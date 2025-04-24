@@ -78,12 +78,6 @@ class LEDDriver {
 
         /**
          * Update LED PWM status.
-         * 
-         * Return true if PWM counter wrapped around (TOP was reached).
          */
-        bool updateLEDs();
-
-        uint8_t getLEDStatus(int index) { 
-            return mIntensity[index] > 0 && mPWMCounter <= mIntensity[index] ? 1 : 0; 
-        }
+        void loop();
 };

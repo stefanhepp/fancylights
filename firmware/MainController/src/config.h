@@ -16,15 +16,21 @@
 /* Common controller settings                           */
 /* ==================================================== */
 
-static const uint8_t PIN_SW_TXD       = PIN_PB0;
-static const uint8_t PIN_SW_RXD       = PIN_PB7;
-static const uint8_t PIN_R            = PIN_PB1;
-static const uint8_t PIN_G            = PIN_PB2;
-static const uint8_t PIN_B            = PIN_PD3;
-static const uint8_t PIN_LAMP1        = PIN_PD5;
-static const uint8_t PIN_LAMP2        = PIN_PD6;
-static const uint8_t PIN_SCREEN_UP    = PIN_PC0;
-static const uint8_t PIN_SCREEN_DOWN  = PIN_PC1;
-static const uint8_t PIN_WINCH_SWITCH = PIN_PB6;
-static const uint8_t PIN_MOTOR_IN1    = PIN_PC2;
-static const uint8_t PIN_MOTOR_IN2    = PIN_PC3;
+static const uint8_t PIN_R            = 1;
+static const uint8_t PIN_G            = 23;
+static const uint8_t PIN_B            = 22;
+static const uint8_t PIN_LAMP1        = 19;
+static const uint8_t PIN_LAMP2        = 21;
+static const uint8_t PIN_SCREEN_UP    = 2;
+static const uint8_t PIN_SCREEN_DOWN  = 4;
+static const uint8_t PIN_WINCH_SWITCH = 27;
+static const uint8_t PIN_MOTOR_IN1    = 25;
+static const uint8_t PIN_MOTOR_IN2    = 26;
+
+static const uint8_t UART_KEYPAD      = 1;
+static const uint8_t UART_PROJECTOR   = 2;
+
+static const uint8_t PIN_KP_TXD       = 5;
+static const uint8_t PIN_KP_RXD       = 18;
+static const uint8_t PIN_PR_TXD       = 17;
+static const uint8_t PIN_PR_RXD       = 16;

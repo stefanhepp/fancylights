@@ -14,6 +14,8 @@
 
 #include "config.h"
 
+HardwareSerial projectorSerial(UART_PROJECTOR);
+
 ProjectorController::ProjectorController(Settings &settings)
 : mSettings(settings)
 {
@@ -49,11 +51,7 @@ void ProjectorController::requestStatus()
 
 void ProjectorController::begin()
 {
-    pinMode(PIN_SW_RXD, INPUT_PULLUP);
-    pinMode(PIN_SW_TXD, OUTPUT);
-
-    digitalWrite(PIN_SW_TXD, HIGH);
-
+    projectorSerial.begin(UART_SPEED_PROJECTOR, SERIAL_8N1, PIN_PR_RXD, PIN_PR_TXD);
 
     pinMode(PIN_SCREEN_UP, OUTPUT);
     pinMode(PIN_SCREEN_DOWN, OUTPUT);

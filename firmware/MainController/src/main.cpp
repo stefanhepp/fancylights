@@ -22,6 +22,8 @@ Settings settings;
 LEDDriver LEDs(settings);
 ProjectorController Projector(settings);
 
+HardwareSerial keypadSerial(UART_KEYPAD);
+
 static const int UART_BUFFER_SIZE = 16;
 static uint8_t UARTBuffer[UART_BUFFER_SIZE];
 static uint8_t UARTBufferLength = 0;
@@ -30,20 +32,19 @@ uint8_t CntStatusTimeout = 0;
 
 void sendStatus()
 {
-    Serial.write(CMD_HEADER | CMD_READ_STATUS);
-    Serial.write(LEDs.lightMode());
-    Serial.write(LEDs.intensity());
-    Serial.write(LEDs.dimmedIntensity());
-    Serial.write(Projector.mode());
-    Serial.write(LEDs.rgbMode());
-    Serial.write(LEDs.getHSV(0));
-    Serial.write(LEDs.getHSV(1));
-    Serial.write(LEDs.getHSV(2));
+    keypadSerial.write(CMD_HEADER | CMD_READ_STATUS);
+    keypadSerial.write(LEDs.lightMode());
+    keypadSerial.write(LEDs.intensity());
+    keypadSerial.write(LEDs.dimmedIntensity());
+    keypadSerial.write(Projector.mode());
+    keypadSerial.write(LEDs.rgbMode());
+    keypadSerial.write(LEDs.getHSV(0));
+    keypadSerial.write(LEDs.getHSV(1));
+    keypadSerial.write(LEDs.getHSV(2));
 
-    Serial.write(LEDs.getColor(0));
-    Serial.write(LEDs.getColor(1));
-    Serial.write(LEDs.getColor(2));
-
+    keypadSerial.write(LEDs.getColor(0));
+    keypadSerial.write(LEDs.getColor(1));
+    keypadSerial.write(LEDs.getColor(2));
 }
 
 void onProjectorStatus(bool powerOn) {
@@ -126,49 +127,38 @@ void processCommand(uint8_t data)
 }
 
 void setup() {
-    // Enable pullups for unconnected pins
-    pinMode(PIN_PB3, INPUT_PULLUP);
-    pinMode(PIN_PB4, INPUT_PULLUP);
-    pinMode(PIN_PB5, INPUT_PULLUP);
-    pinMode(PIN_PC4, INPUT_PULLUP);
-    pinMode(PIN_PC5, INPUT_PULLUP);
-    pinMode(PIN_PC6, INPUT_PULLUP);
-    pinMode(PIN_PD2, INPUT_PULLUP);
-    pinMode(PIN_PD4, INPUT_PULLUP);
-    pinMode(PIN_PD7, INPUT_PULLUP);
+    settings.begin();
 
     LEDs.begin();
 
     Projector.setStatusCallback(onProjectorStatus);
     Projector.begin();
 
-    Serial.begin(UART_SPEED_CONTROLLER);
+    // Serial monitor
+    Serial.begin(115200);
+
+    keypadSerial.begin(UART_SPEED_CONTROLLER, SERIAL_8N1, PIN_KP_RXD, PIN_KP_TXD);
 }
 
 void loop() {
 
-    bool wrapAround = LEDs.updateLEDs();
+    LEDs.loop();
 
-    digitalWrite(PIN_R, !LEDs.getLEDStatus(LED_R));
-    digitalWrite(PIN_G, !LEDs.getLEDStatus(LED_G));
-    digitalWrite(PIN_B, !LEDs.getLEDStatus(LED_B));
-    digitalWrite(PIN_LAMP1, !LEDs.getLEDStatus(LED_LAMP1));
-    digitalWrite(PIN_LAMP2, !LEDs.getLEDStatus(LED_LAMP2));
+    // Process 
+    while (keypadSerial.available()) {
+        char data = keypadSerial.read();
 
-    if (wrapAround) {
-        while (Serial.available()) {
-            int data = Serial.read();
-
-            processCommand(data);
-        }
-
-        if (CntStatusTimeout > 0) {
-            CntStatusTimeout--;
-            if (CntStatusTimeout == 0) {
-                sendStatus();
-            }
-        }
-
-        Projector.loop();
+        processCommand(data);
     }
+
+    if (CntStatusTimeout > 0) {
+        CntStatusTimeout--;
+        if (CntStatusTimeout == 0) {
+            sendStatus();
+        }
+    }
+
+    Projector.loop();
+
+    delayMicroseconds(1000);
 }

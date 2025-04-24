@@ -10,69 +10,72 @@
  */
 #include "Settings.h"
 
+#include <Preferences.h>
+
 #include <commands.h>
 
-#include <avr/eeprom.h>
+static const char* PREF_NAMESPACE = "Prefs";
 
-uint8_t EEMEM confColor[3];
-uint8_t EEMEM confLightMode;
-uint8_t EEMEM confLightIntensity;
-uint8_t EEMEM confDimmedIntensity;
-uint8_t EEMEM confRGBMode;
+Preferences myPrefs;
 
 Settings::Settings()
 {
 }
 
+void Settings::begin()
+{
+    myPrefs.begin(PREF_NAMESPACE);
+}
+
 uint8_t Settings::lightMode()
 {
-    uint8_t value = eeprom_read_byte(&confLightMode);
-    return value == 0xFF ? 0 : value;
+    return myPrefs.getUChar("lightMode", 0);
 }
 
 void Settings::setLightMode(uint8_t mode)
 {
-    eeprom_write_byte(&confLightMode, mode);
+    myPrefs.putUChar("lightMode", mode);
 }
 
 uint8_t Settings::rgbMode()
 {
-    uint8_t value = eeprom_read_byte(&confRGBMode);
-    return value == 0xFF ? RGB_ON : value;
+    return myPrefs.getUChar("rgbMode", RGBMode::RGB_ON);
 }
 
 void Settings::setRGBMode(uint8_t mode)
 {
-    eeprom_write_byte(&confRGBMode, mode);
+    myPrefs.putUChar("rgbMode", mode);
 }
 
 uint8_t Settings::intensity()
 {
-    return eeprom_read_byte(&confLightIntensity);
+    return myPrefs.getUChar("intensity", 255);
 }
 
 void Settings::setIntensity(uint8_t value)
 {
-    eeprom_write_byte(&confLightIntensity, value);
+    myPrefs.putUChar("intensity", value);
 }
 
 uint8_t Settings::dimmedIntensity()
 {
-    uint8_t value = eeprom_read_byte(&confDimmedIntensity);
-    return value != 0xFF ? value : 40;
+    return myPrefs.getUChar("dimIntensity", 40);
 }
 
 void Settings::setDimmedIntensity(uint8_t value)
 {
-    eeprom_write_byte(&confDimmedIntensity, value);
+    myPrefs.putUChar("dimIntensity", value);
 }
 
 uint8_t Settings::getHSV(int index)
 {
-    return eeprom_read_byte(&confColor[index]);
+    uint8_t hsv[3];
+    myPrefs.getBytes("hsv", hsv, sizeof(hsv));
+    return index < 3 ? hsv[index] : 0;
 }
 
-void Settings::setHSV(int index, uint8_t intensity)
+void Settings::setHSV(uint8_t hue, uint8_t saturation, uint8_t value)
 {
-    eeprom_write_byte(&confColor[index], intensity);
+    uint8_t hsv[3] = {hue, saturation, value};
+    myPrefs.putBytes("hsv", hsv, sizeof(hsv));
 }

@@ -10,11 +10,6 @@
  */
 #include "LED.h"
 
-#include <avr/io.h>
-#include <avr/interrupt.h>
-
-#include <avrlib.h>
-
 #include <commands.h>
 
 #include "config.h"
@@ -177,6 +172,12 @@ void LEDDriver::recalculate()
         mIntensity[LED_G] = 0;
         mIntensity[LED_B] = 0;
     }
+
+    analogWrite(PIN_LAMP1, mIntensity[LED_LAMP1]);
+    analogWrite(PIN_LAMP2, mIntensity[LED_LAMP2]);
+    analogWrite(PIN_R, mIntensity[LED_R]);
+    analogWrite(PIN_G, mIntensity[LED_G]);
+    analogWrite(PIN_B, mIntensity[LED_B]);
 }
 
 void LEDDriver::setLightMode(uint8_t mode)
@@ -212,15 +213,16 @@ void LEDDriver::setHSV(uint8_t hue, uint8_t saturation, uint8_t value)
     mHSV[0] = hue;
     mHSV[1] = saturation;
     mHSV[2] = value;
-    mSettings.setHSV(0, hue);
-    mSettings.setHSV(1, saturation);
-    mSettings.setHSV(2, value);
+    mSettings.setHSV(hue, saturation, value);
     hsvToRgb();
     recalculate();
 }
 
 void LEDDriver::begin()
 {
+    analogWriteFrequency(5000);
+    analogWriteResolution(8);
+
     mLightMode = mSettings.lightMode();
     mLightIntensity = mSettings.intensity();
     mDimmedIntensity = mSettings.dimmedIntensity();
@@ -229,37 +231,22 @@ void LEDDriver::begin()
         mHSV[i] = mSettings.getHSV(i);
     }
     hsvToRgb();
-
-    // no output, 8-bit normal PWM
-    TCCR2A = 0;
-
-    // set prescaler to CK/256 (~10ms period)
-    TCCR2B = (1<<CS22)|(1<<CS21);
-
-    // Enable interrupts
-    TIMSK2 = 0;
+    recalculate();
 }
 
-bool LEDDriver::updateLEDs() {
-    mLastCounter = mPWMCounter;
-    mPWMCounter = TCNT2;
-    bool wrapAround = mPWMCounter < mLastCounter;
+void LEDDriver::loop()
+{
+    mCycleCounter = (mCycleCounter + 1) % 8;
 
-    if (wrapAround) {
-        mCycleCounter = (mCycleCounter + 1) % 8;
-
-        if (mCycleCounter == 0 && mRGBMode == RGBMode::RGB_CYCLE) {
-            mHSV[0]++;
-            if (mHSV[0] > 255) {
-                mHSV[0] = 0;
-            }
-            hsvToRgb();
-            recalculate();
+    if (mCycleCounter == 0 && mRGBMode == RGBMode::RGB_CYCLE) {
+        mHSV[0]++;
+        if (mHSV[0] > 255) {
+            mHSV[0] = 0;
         }
-        else if (mRGBMode == RGBMode::RGB_FIRE) {
-
-        }
+        hsvToRgb();
+        recalculate();
     }
+    else if (mRGBMode == RGBMode::RGB_FIRE) {
 
-    return wrapAround;
+    }
 }

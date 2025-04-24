@@ -38,7 +38,9 @@ class Settings
 
         void setDimmedIntensity(uint8_t intensity);
 
-        void setHSV(int index, uint8_t intensity);
+        void setHSV(uint8_t hue, uint8_t saturation, uint8_t value);
+
+        void begin();
 };
 
 #endif
