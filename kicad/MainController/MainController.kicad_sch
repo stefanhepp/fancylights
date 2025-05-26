@@ -6048,7 +6048,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10n"
+		(property "Value" "100n"
 			(at 135.89 96.5199 0)
 			(effects
 				(font
@@ -6429,7 +6429,7 @@
 				)
 			)
 		)
-		(property "Value" "100"
+		(property "Value" "10"
 			(at 59.69 35.56 90)
 			(effects
 				(font
@@ -6778,7 +6778,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10n"
+		(property "Value" "100n"
 			(at 217.17 96.5199 0)
 			(effects
 				(font
@@ -6916,7 +6916,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "10n"
+		(property "Value" "100n"
 			(at 201.93 96.5199 0)
 			(effects
 				(font
@@ -7781,7 +7781,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10n"
+		(property "Value" "100n"
 			(at 208.28 118.1099 0)
 			(effects
 				(font
@@ -8385,7 +8385,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_SO:SOIC-16W_5.3x10.2mm_P1.27mm"
+		(property "Footprint" "Package_SO:SOIC-16_4.55x10.3mm_P1.27mm"
 			(at 161.29 140.97 0)
 			(effects
 				(font
@@ -8621,7 +8621,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10n"
+		(property "Value" "100n"
 			(at 187.96 96.5199 0)
 			(effects
 				(font
@@ -8771,7 +8771,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10n"
+		(property "Value" "100n"
 			(at 129.54 39.3699 0)
 			(effects
 				(font
@@ -8982,7 +8982,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_THT:C_Disc_D7.5mm_W2.5mm_P5.00mm"
+		(property "Footprint" "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm"
 			(at 112.7252 41.91 0)
 			(effects
 				(font

@@ -16,6 +16,8 @@ _autosave-*
 fp-info-cache
 \#auto_saved_files#
 *.lck
+gerber/
+bom/
 
 # Ignore FreeCAD backups
 *.FCStd1
