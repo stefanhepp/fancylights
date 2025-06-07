@@ -76,4 +76,11 @@ void ProjectorController::loop()
             digitalWrite(PIN_SCREEN_DOWN, LOW);
         }
     }
+
+        // Process 
+    while (projectorSerial.available()) {
+        char data = projectorSerial.read();
+
+        //processCommand(data);
+    }
 }

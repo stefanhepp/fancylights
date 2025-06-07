@@ -16,9 +16,8 @@
 /* Common controller settings                           */
 /* ==================================================== */
 
-static const uint8_t PIN_R            = 1;
-static const uint8_t PIN_G            = 23;
-static const uint8_t PIN_B            = 22;
+static const uint8_t PIN_RGB_DATA     = 22;
+static const uint8_t PIN_RGB_PWR      = 23;
 static const uint8_t PIN_LAMP1        = 19;
 static const uint8_t PIN_LAMP2        = 21;
 static const uint8_t PIN_SCREEN_UP    = 2;

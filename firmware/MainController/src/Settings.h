@@ -1,11 +1,11 @@
 /*
- * @project     Midi Pedalboard
+ * @project     FancyLights
  * @author      Stefan Hepp, stefan@stefant.org
  *
  * Store config values in EEPROM.
  * Channel and intensity are values from 0 to 15.
  *
- * Copyright 2024 Stefan Hepp
+ * Copyright 2025 Stefan Hepp
  * License: GPL v3
  * See 'COPYRIGHT.txt' for copyright and licensing information.
  */

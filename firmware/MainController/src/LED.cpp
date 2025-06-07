@@ -1,5 +1,5 @@
 /*
- * @project     FancyController
+ * @project     FancyLights
  * @author      Stefan Hepp, stefan@stefant.org
  *
  * LED intensity and mode implementation.
@@ -11,6 +11,8 @@
 #include "LED.h"
 
 #include <commands.h>
+
+#include <FastLED.h>
 
 #include "config.h"
 
@@ -175,9 +177,9 @@ void LEDDriver::recalculate()
 
     analogWrite(PIN_LAMP1, mIntensity[LED_LAMP1]);
     analogWrite(PIN_LAMP2, mIntensity[LED_LAMP2]);
-    analogWrite(PIN_R, mIntensity[LED_R]);
-    analogWrite(PIN_G, mIntensity[LED_G]);
-    analogWrite(PIN_B, mIntensity[LED_B]);
+//    analogWrite(PIN_R, mIntensity[LED_R]);
+//    analogWrite(PIN_G, mIntensity[LED_G]);
+//    analogWrite(PIN_B, mIntensity[LED_B]);
 }
 
 void LEDDriver::setLightMode(uint8_t mode)
@@ -222,6 +224,11 @@ void LEDDriver::begin()
 {
     analogWriteFrequency(5000);
     analogWriteResolution(8);
+
+    pinMode(PIN_RGB_DATA, OUTPUT);
+    pinMode(PIN_RGB_PWR, OUTPUT);
+
+    digitalWrite(PIN_RGB_PWR, LOW);
 
     mLightMode = mSettings.lightMode();
     mLightIntensity = mSettings.intensity();

@@ -1,5 +1,5 @@
 /*
- * @project     FancyController
+ * @project     FancyLights
  * @author      Stefan Hepp, stefan@stefant.org
  *
  * RGB LED driver.

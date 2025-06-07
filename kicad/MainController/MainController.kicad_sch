@@ -6429,7 +6429,7 @@
 				)
 			)
 		)
-		(property "Value" "10"
+		(property "Value" "0"
 			(at 59.69 35.56 90)
 			(effects
 				(font
@@ -8385,7 +8385,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_SO:SOIC-16_4.55x10.3mm_P1.27mm"
+		(property "Footprint" "Package_SO:SOIC-16_3.9x9.9mm_P1.27mm"
 			(at 161.29 140.97 0)
 			(effects
 				(font

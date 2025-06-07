@@ -1,5 +1,5 @@
 /*
- * @project     Midi Pedalboard
+ * @project     FancyLights
  * @author      Stefan Hepp, stefan@stefant.org
  *
  * Implementation of EEPROM access.
