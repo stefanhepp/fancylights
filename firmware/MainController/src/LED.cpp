@@ -41,6 +41,7 @@ void LEDDriver::updateIntensity()
         uint16_t intensity = mRGBMode == RGBMode::RGB_DIMMED ? mDimmedIntensity : 256;
         
         FastLED.setBrightness(intensity);
+        FastLED.show();
     }
 
     analogWrite(PIN_LAMP1, mIntensity[LED_LAMP1]);
@@ -51,14 +52,16 @@ void LEDDriver::updateLEDs(bool force) {
     if (mEnableLEDStrip) {
         switch (mRGBMode) {
             case RGBMode::RGB_ON:
-                break;
             case RGBMode::RGB_CYCLE:
-
+                CRGB rgb;
+                hsv2rgb_rainbow(mHSV, rgb);
+                fill_solid(mLEDs, NUM_LEDS, rgb);
                 break;
             case RGBMode::RGB_FIRE:
 
                 break;
         }
+        FastLED.show();
     }
 }
 
@@ -138,17 +141,13 @@ void LEDDriver::loop()
 {
     EVERY_N_MILLISECONDS( 20 ) {
         if (mRGBMode == RGBMode::RGB_CYCLE) {
+            // 8-bit component, intentionally overflow to cycle around
             mHSV[0]++;
-            if (mHSV[0] > 255) {
-                mHSV[0] = 0;
-            }
             updateLEDs();
         }
         else if (mRGBMode == RGBMode::RGB_FIRE) {
 
         }
-
-        FastLED.show();
     }
 
 }

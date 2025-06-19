@@ -65,35 +65,37 @@ void CommandLine::printHelp()
     }
 }
 
-void CommandLine::handleRetCode(CmdErrorCode ret, bool eol)
+void CommandLine::handleParseStatus(CmdParseStatus ret)
 {
     switch (ret) {
-        case CmdErrorCode::CmdOK:
-            if (eol) {
-                Serial.println("OK");
-            }
+        case CmdParseStatus::CPSComplete:
             // no arguments expected
-            mExpectCommand = false;
+            mExpectArgument = false;
             break;
-        case CmdErrorCode::CmdNextArgument:
-            if (eol) {
-                Serial.print("Missing arguments: ");
-                printCommandHelp(mCurrentCommand);
-            }
-            mExpectCommand = true;
+        case CmdParseStatus::CPSNextArgument:
+            mExpectArgument = true;
             break;
-        case CmdErrorCode::CmdInvalidArgument:
-            Serial.print("Error parsing command: ");
-            Serial.println(mToken);
+        case CmdParseStatus::CPSInvalidArgument:
+            Serial.print("Invalid argument: ");
+            printCommandHelp(mCurrentCommand);
 
-            mExpectCommand = false;
-            mCurrentCommand = -1;
+            abortCommand();
             break;
-        case CmdErrorCode::CmdError:
+    }
+}
+
+void CommandLine::handleExecStatus(CmdExecStatus ret)
+{
+    switch (ret) {
+        case CmdExecStatus::CESOK:
+            Serial.println("OK");
+            break;
+        case CmdExecStatus::CESInvalidArgument:
+            Serial.print("Invalid arguments for command ");
+            Serial.println(mCommands[mCurrentCommand]);
+            break;
+        case CmdExecStatus::CESError:
             Serial.println("FAIL");
-
-            mExpectCommand = false;
-            mCurrentCommand = -1;
             break;
     }
 }
@@ -105,11 +107,13 @@ void CommandLine::selectCommand()
             // Found a valid command
             mCurrentCommand = i;
             mArgumentNo = 0;
+            // Parse till we get an error or EOL
+            mExpectCommand = false;
 
-            CmdErrorCode ret = mParsers[i]->startCommand(mToken);
+            CmdParseStatus ret = mParsers[i]->startCommand(mToken);
 
             // OK, continue, fail?
-            handleRetCode(ret, false);
+            handleParseStatus(ret);
 
             // found a command, abort
             return;
@@ -124,7 +128,8 @@ void CommandLine::selectCommand()
     // only reached if no command matched
     Serial.printf("Invalid command '%s'! See 'help'.\n", mToken);
 
-    mExpectCommand = false;
+    mExpectCommand = true;
+    mExpectArgument = false;
     mCurrentCommand = -1;
 }
 
@@ -135,26 +140,34 @@ void CommandLine::processArgument()
     }
 
     if (mTokenLength > 0) {    
-       CmdErrorCode ret = mParsers[mCurrentCommand]->parseNextArgument(mArgumentNo++, mToken);
+       CmdParseStatus ret = mParsers[mCurrentCommand]->parseNextArgument(mArgumentNo++, mToken);
 
         // OK, continue, fail?
-        handleRetCode(ret, false);
+        handleParseStatus(ret);
     }
 }
 
 void CommandLine::completeCommand()
 {
     if (mCurrentCommand != -1) {
-        CmdErrorCode ret = mParsers[mCurrentCommand]->completeCommand(mExpectCommand);
-        handleRetCode(ret, true);
+        CmdExecStatus ret = mParsers[mCurrentCommand]->completeCommand(mExpectArgument);
+        handleExecStatus(ret);
 
-        if (ret != CmdErrorCode::CmdOK) {
-            mParsers[mCurrentCommand]->resetCommand();
+        if (ret != CmdExecStatus::CESOK) {
+            abortCommand();
         }
-
-        mExpectCommand = false;
-        mCurrentCommand = -1;
     }
+}
+
+void CommandLine::abortCommand()
+{
+    if (mCurrentCommand != -1) {
+        mParsers[mCurrentCommand]->resetCommand();
+    }
+
+    mExpectArgument = false;
+    mExpectCommand = true;
+    mCurrentCommand = -1;
 }
 
 void CommandLine::processToken()
@@ -189,6 +202,7 @@ void CommandLine::processEOL()
         completeCommand();       
     }
     mExpectCommand = true;
+    mExpectArgument = false;
     mCurrentCommand = -1;
 }
 

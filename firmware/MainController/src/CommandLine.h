@@ -12,16 +12,24 @@
 
 #include <inttypes.h>
 
-enum CmdErrorCode
+enum CmdParseStatus
 {
-    // Command successfully completed
-    CmdOK,
+    // All mandatory arguments parsed.
+    CPSComplete,
     // Command expects another argument
-    CmdNextArgument,
+    CPSNextArgument,
     // Command processing failed (invalid arguments), either too much or wrong arguments
-    CmdInvalidArgument,
+    CPSInvalidArgument
+};
+
+enum CmdExecStatus
+{
+    // Command successfully executed
+    CESOK,
+    // Command processing failed (invalid arguments), either too much or wrong arguments
+    CESInvalidArgument,
     // Command execution failed.
-    CmdError
+    CESError
 };
 
 class CommandParser
@@ -30,22 +38,32 @@ class CommandParser
         bool parseInteger(const char* arg, int &value, int minValue, int maxValue);
 
     public:
+        /** 
+         * Print the command line arguments
+         */
         virtual void printArguments() { }
 
+        /**
+         * Called when the command was aborted because of some error.
+         */
         virtual void resetCommand() { }
     
         /**
          * Start parsing a new command "cmd".
          * 
-         * @return True if there is another argument expected.
+         * @return CmdNextArgument if there are mandatory arguments, or CmdOK if there are only optional arguments.
          */
-        virtual CmdErrorCode startCommand(const char* cmd) = 0;
+        virtual CmdParseStatus startCommand(const char* cmd) { return CPSComplete; };
 
-        virtual CmdErrorCode parseNextArgument(int argNo, const char* arg) { return CmdErrorCode::CmdInvalidArgument; }
+        virtual CmdParseStatus parseNextArgument(int argNo, const char* arg) { return CPSInvalidArgument; }
 
-        virtual CmdErrorCode completeCommand(bool expectArgument) { return expectArgument ? CmdErrorCode::CmdNextArgument 
-                                                                                          : CmdErrorCode::CmdOK; 
-                                                                  }
+        /**
+         * Called when all arguments are parsed, execute the command here.
+         * 
+         * @param expectArgument: if a previous call returned CmdNextArgument, otherwise false.
+         * @return: CmdOK if command was successful, otherwise CmdError or CmdInvalidArgument.
+         */
+        virtual CmdExecStatus completeCommand(bool expectArgument) = 0;
 };
 
 static const int MAX_PARSERS = 16;
@@ -63,19 +81,26 @@ class CommandLine
 
         int  mCurrentCommand = -1;
         int  mArgumentNo = 0;
+        // Waiting for a new command?
         bool mExpectCommand = true;
+        // Waiting for an argument?
+        bool mExpectArgument = false;
 
         void printHelp();
 
         void printCommandHelp(int cmd);
 
-        void handleRetCode(CmdErrorCode ret, bool eol);
+        void handleParseStatus(CmdParseStatus ret);
+
+        void handleExecStatus(CmdExecStatus ret);
 
         void selectCommand();
 
         void processArgument();
 
         void completeCommand();
+
+        void abortCommand();
 
         void processToken();
 
