@@ -14,25 +14,33 @@
 
 #include <inttypes.h>
 
+#include <chsv.h>
+
+#include <commands.h>
+
 class Settings
 {
     public:
         Settings();
 
-        uint8_t lightMode();
+        bool    isLampEnabled();
 
-        uint8_t rgbMode();
+        bool    isLEDStripEnabled();
+
+        RGBMode rgbMode();
 
         uint8_t intensity();
 
         uint8_t dimmedIntensity();
 
-        uint8_t getHSV(int index);
+        CHSV getHSV();
 
 
-        void setLightMode(uint8_t mode);
+        void setLampEnabled(bool enabled);
 
-        void setRGBMode(uint8_t mode);
+        void setLEDStripEnabled(bool enabled);
+
+        void setRGBMode(RGBMode mode);
 
         void setIntensity(uint8_t intensity);
 

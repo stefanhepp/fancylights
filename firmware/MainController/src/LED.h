@@ -12,62 +12,69 @@
 
 #include <inttypes.h>
 
+#include <chsv.h>
+#include <crgb.h>
+
+#include <commands.h>
+
 #include "Settings.h"
 
-static const uint8_t NUM_LEDS = 5;
+static const uint8_t NUM_LAMPS = 2;
 
-static const uint8_t LED_R = 0;
-static const uint8_t LED_G = 1;
-static const uint8_t LED_B = 2;
-static const uint8_t LED_LAMP1 = 3;
-static const uint8_t LED_LAMP2 = 4;
+static const uint8_t LED_LAMP1 = 0;
+static const uint8_t LED_LAMP2 = 1;
+
+static const uint8_t NUM_LEDS = 60 * 4;
 
 class LEDDriver {
     private:
         Settings &mSettings;
 
-        uint8_t mRGB[3];
-        int16_t mHSV[3];
-        uint8_t mIntensity[NUM_LEDS];
+        CHSV    mHSV;
+    
+        uint8_t mIntensity[NUM_LAMPS];
+        CRGB    mLEDs[NUM_LEDS];
 
-        uint8_t mLightMode = 0;
+        bool    mEnableLamps = false;
+        bool    mEnableLEDStrip = false;
+
         uint8_t mLightIntensity = 255;
         uint8_t mDimmedIntensity = 50;
 
-        uint8_t mRGBMode = 0;
+        RGBMode mRGBMode = RGB_ON;
 
-        uint8_t mPWMCounter;
-        uint8_t mLastCounter;
+        void updateIntensity();
 
-        int mCycleCounter = 0;
-
-        void recalculate();
-
-        void hsvToRgb();
+        void updateLEDs(bool force = false);
 
     public:
         explicit LEDDriver(Settings &settings);
 
-        uint8_t lightMode() const { return mLightMode; }
 
-        uint8_t rgbMode() const { return mRGBMode; }
+        bool    isLampEnabled() { return mEnableLamps; }
+
+        bool    isLEDStripEnabled() { return mEnableLEDStrip; }
 
         uint8_t intensity() const { return mLightIntensity; }
 
         uint8_t dimmedIntensity() const { return mDimmedIntensity; }
 
-        uint8_t getColor(int index) const { return mRGB[index]; }
 
-        uint8_t getHSV(int component) const { return mHSV[component]; }
+        RGBMode rgbMode() const { return mRGBMode; }
+
+        const CHSV &getHSV() const { return mHSV; }
 
 
-        void setLightMode(uint8_t mode);
+        void enableLamps(bool enabled);
 
-        void setRGBMode(uint8_t mode);
+        void enableLEDStrip(bool enabled);
 
         void setIntensity(uint8_t intensity);
 
         void setDimmedIntensity(uint8_t intensity);
+
+
+        void setRGBMode(RGBMode mode);
 
         void setHSV(uint8_t hue, uint8_t saturation, uint8_t value);
 

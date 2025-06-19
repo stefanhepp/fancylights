@@ -22,7 +22,7 @@ class ProjectorController {
     private:
         StatusCallback mStatusCallback = nullptr;
 
-        uint8_t mMode = PROJECTOR_OFF;
+        ProjectorCommand mMode = PROJECTOR_OFF;
 
         uint8_t mCntPulse = 0;
 
@@ -33,13 +33,13 @@ class ProjectorController {
         
         void setStatusCallback(StatusCallback callback) { mStatusCallback = callback; }
 
-        void setMode(uint8_t mode);
+        void setMode(ProjectorCommand mode);
 
-        uint8_t mode() const { return mMode; }
+        ProjectorCommand mode() const { return mMode; }
 
-        void moveProjector(uint8_t direction);
+        void moveProjector(LiftCommand direction);
 
-        void moveScreen(uint8_t direction);
+        void moveScreen(LiftCommand direction);
 
         void requestStatus();
 

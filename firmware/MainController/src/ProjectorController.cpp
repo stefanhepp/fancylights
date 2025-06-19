@@ -21,19 +21,19 @@ ProjectorController::ProjectorController(Settings &settings)
 {
 }
 
-void ProjectorController::setMode(uint8_t mode)
+void ProjectorController::setMode(ProjectorCommand mode)
 {
     // TODO send command via SW UART to projector
 
     mMode = mode;
 }
 
-void ProjectorController::moveProjector(uint8_t direction)
+void ProjectorController::moveProjector(LiftCommand direction)
 {
     
 }
 
-void ProjectorController::moveScreen(uint8_t direction)
+void ProjectorController::moveScreen(LiftCommand direction)
 {
     mCntPulse = 50;
     if (direction == LiftCommand::LIFT_UP || direction == LiftCommand::LIFT_STOP) {
@@ -77,7 +77,7 @@ void ProjectorController::loop()
         }
     }
 
-        // Process 
+    // Process UART response
     while (projectorSerial.available()) {
         char data = projectorSerial.read();
 

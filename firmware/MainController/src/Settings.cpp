@@ -27,25 +27,37 @@ void Settings::begin()
     myPrefs.begin(PREF_NAMESPACE);
 }
 
-uint8_t Settings::lightMode()
+bool Settings::isLampEnabled()
 {
-    return myPrefs.getUChar("lightMode", 0);
+    return myPrefs.getUChar("LampOn", 0);
 }
 
-void Settings::setLightMode(uint8_t mode)
+bool Settings::isLEDStripEnabled()
 {
-    myPrefs.putUChar("lightMode", mode);
+    return myPrefs.getUChar("LEDOn", 0);
 }
 
-uint8_t Settings::rgbMode()
+void Settings::setLampEnabled(bool enabled)
 {
-    return myPrefs.getUChar("rgbMode", RGBMode::RGB_ON);
+    myPrefs.putUChar("lampOn", enabled);
 }
 
-void Settings::setRGBMode(uint8_t mode)
+void Settings::setLEDStripEnabled(bool enabled)
+{
+    myPrefs.putUChar("LEDOn", enabled);
+}
+
+
+RGBMode Settings::rgbMode()
+{
+    return (RGBMode) myPrefs.getUChar("rgbMode", RGBMode::RGB_ON);
+}
+
+void Settings::setRGBMode(RGBMode mode)
 {
     myPrefs.putUChar("rgbMode", mode);
 }
+
 
 uint8_t Settings::intensity()
 {
@@ -67,11 +79,16 @@ void Settings::setDimmedIntensity(uint8_t value)
     myPrefs.putUChar("dimIntensity", value);
 }
 
-uint8_t Settings::getHSV(int index)
+
+CHSV Settings::getHSV()
 {
     uint8_t hsv[3];
+    CHSV chsv;
+
     myPrefs.getBytes("hsv", hsv, sizeof(hsv));
-    return index < 3 ? hsv[index] : 0;
+    chsv.setHSV(hsv[0], hsv[1], hsv[2]);
+
+    return chsv;
 }
 
 void Settings::setHSV(uint8_t hue, uint8_t saturation, uint8_t value)

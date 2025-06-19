@@ -11,6 +11,10 @@
 
 #include <Arduino.h>
 
+#include <WiFi.h>
+#include <PubSubClient.h>
+#include <FastLED.h>
+
 #include <commands.h>
 
 #include "config.h"
@@ -32,6 +36,9 @@ static uint8_t UARTBufferLength = 0;
 
 uint8_t CntStatusTimeout = 0;
 
+WiFiClient wifiClient;
+PubSubClient mqttClient(wifiClient);
+
 class StatusParser: public CommandParser
 {
     public:
@@ -42,8 +49,12 @@ class StatusParser: public CommandParser
         }
 
         virtual CmdErrorCode startCommand(const char* cmd) {
-            Serial.printf("Light Mode: %hhu\n", LEDs.lightMode());
+            Serial.printf("Enable Lamp: %hhu, LED Strip: %hhu\n", LEDs.isLampEnabled(), LEDs.isLEDStripEnabled());
             Serial.printf("Light Intensity: %hhu\n", LEDs.intensity());
+            Serial.printf("Dimmed Intensity: %hhu\n", LEDs.dimmedIntensity());
+            Serial.printf("RGB Strip Mode: %hhu\n", LEDs.rgbMode());
+            Serial.printf("Projector Mode: %hhu\n", Projector.mode());
+            Serial.printf("HSV: %hhu %hhu %hhu\n", LEDs.getHSV().hue, LEDs.getHSV().sat, LEDs.getHSV().val);
 
             return CmdErrorCode::CmdOK;
         }
@@ -52,18 +63,14 @@ class StatusParser: public CommandParser
 void sendStatus()
 {
     keypadSerial.write(CMD_HEADER | CMD_READ_STATUS);
-    keypadSerial.write(LEDs.lightMode());
+    keypadSerial.write((LEDs.isLEDStripEnabled() << 1) | (LEDs.isLampEnabled()));
     keypadSerial.write(LEDs.intensity());
     keypadSerial.write(LEDs.dimmedIntensity());
     keypadSerial.write(Projector.mode());
     keypadSerial.write(LEDs.rgbMode());
-    keypadSerial.write(LEDs.getHSV(0));
-    keypadSerial.write(LEDs.getHSV(1));
-    keypadSerial.write(LEDs.getHSV(2));
-
-    keypadSerial.write(LEDs.getColor(0));
-    keypadSerial.write(LEDs.getColor(1));
-    keypadSerial.write(LEDs.getColor(2));
+    keypadSerial.write(LEDs.getHSV().hue);
+    keypadSerial.write(LEDs.getHSV().sat);
+    keypadSerial.write(LEDs.getHSV().val);
 }
 
 void onProjectorStatus(bool powerOn) {
@@ -87,56 +94,57 @@ void processCommand(uint8_t data)
             if (UARTBufferLength >= 2) {
                 LEDs.setIntensity(UARTBuffer[1]);
                 UARTBufferLength = 0;
-                Serial.printf("Set light intensity: %hhu\n", UARTBuffer[1]);
+                Serial.printf("[Kbd] Set light intensity: %hhu\n", UARTBuffer[1]);
             }
             break;
         case CMD_DIMMED_INTENSITY:
             if (UARTBufferLength >= 2) {
                 LEDs.setDimmedIntensity(UARTBuffer[1]);
                 UARTBufferLength = 0;
-                Serial.printf("Set dimmed intensity: %hhu\n", UARTBuffer[1]);
+                Serial.printf("[Kbd] Set dimmed intensity: %hhu\n", UARTBuffer[1]);
             }
             break;
         case CMD_HSV_COLOR:
             if (UARTBufferLength >= 4) {
                 LEDs.setHSV(UARTBuffer[1], UARTBuffer[2], UARTBuffer[3]);
                 UARTBufferLength = 0;
-                Serial.printf("Set HSV: %hhu %hhu %hhu\n", UARTBuffer[1], UARTBuffer[2], UARTBuffer[3]);
+                Serial.printf("[Kbd] Set HSV: %hhu %hhu %hhu\n", UARTBuffer[1], UARTBuffer[2], UARTBuffer[3]);
             }
             break;
         case CMD_LIGHT_MODE:
             if (UARTBufferLength >= 2) {
-                LEDs.setLightMode(UARTBuffer[1]);
+                LEDs.enableLamps(UARTBuffer[1] & 0x01);
+                LEDs.enableLEDStrip(UARTBuffer[1] & 0x02);
                 UARTBufferLength = 0;
-                Serial.printf("Set light mode: %hhu\n", UARTBuffer[1]);
+                Serial.printf("[Kbd] Enable lamp: %hhu, LED strip: %hhu\n", (UARTBuffer[1] & 0x01), (UARTBuffer[1] & 0x02));
             }
             break;
         case CMD_RGB_MODE:
             if (UARTBufferLength >= 2) {
-                LEDs.setRGBMode(UARTBuffer[1]);
+                LEDs.setRGBMode((RGBMode) UARTBuffer[1]);
                 UARTBufferLength = 0;
-                Serial.printf("Set RGB mode: %hhu\n", UARTBuffer[1]);
+                Serial.printf("[Kbd] Set RGB mode: %hhu\n", UARTBuffer[1]);
             }
             break;
         case CMD_SCREEN:
             if (UARTBufferLength >= 2) {
-                Projector.moveScreen(UARTBuffer[1]);
+                Projector.moveScreen((LiftCommand) UARTBuffer[1]);
                 UARTBufferLength = 0;
-                Serial.printf("Move Screen: %hhu\n", UARTBuffer[1]);
+                Serial.printf("[Kbd] Move Screen: %hhu\n", UARTBuffer[1]);
             }
             break;
         case CMD_PROJECTOR_MODE:
             if (UARTBufferLength >= 2) {
-                Projector.setMode(UARTBuffer[1]);
+                Projector.setMode((ProjectorCommand) UARTBuffer[1]);
                 UARTBufferLength = 0;
-                Serial.printf("Set projector mode: %hhu\n", UARTBuffer[1]);
+                Serial.printf("[Kbd] Set projector mode: %hhu\n", UARTBuffer[1]);
             }
             break;
         case CMD_PROJECTOR_LIFT:
             if (UARTBufferLength >= 2) {
-                Projector.moveProjector(UARTBuffer[1]);
+                Projector.moveProjector((LiftCommand) UARTBuffer[1]);
                 UARTBufferLength = 0;
-                Serial.printf("Lift projector: %hhu\n", UARTBuffer[1]);
+                Serial.printf("[Kbd] Lift projector: %hhu\n", UARTBuffer[1]);
             }
             break;
         case CMD_REQUEST_STATUS:
@@ -157,6 +165,7 @@ void setup() {
     settings.begin();
 
     cmdline.begin();
+    cmdline.addCommand("status", new StatusParser());
 
     LEDs.begin();
 
@@ -164,6 +173,10 @@ void setup() {
     Projector.begin();
 
     keypadSerial.begin(UART_SPEED_CONTROLLER, SERIAL_8N1, PIN_KP_RXD, PIN_KP_TXD);
+
+    WiFi.begin("HomeLan", "");
+
+    mqttClient.setServer("mqtt.home", 1883);
 }
 
 void loop() {
@@ -185,5 +198,9 @@ void loop() {
     LEDs.loop();
     Projector.loop();
 
-    delayMicroseconds(1000);
+    EVERY_N_SECONDS( 1 ) {
+        if (WiFi.status() == WL_CONNECTED && !mqttClient.connected()) {
+
+        }
+    }
 }
