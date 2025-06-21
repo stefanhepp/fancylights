@@ -38,14 +38,14 @@ void LEDDriver::updateIntensity()
     }
 
     if (mEnableLEDStrip) {
-        uint16_t intensity = mRGBMode == RGBMode::RGB_DIMMED ? mDimmedIntensity : 256;
+        uint8_t intensity = mRGBMode == RGBMode::RGB_DIMMED ? mDimmedIntensity : 255;
         
         FastLED.setBrightness(intensity);
         FastLED.show();
     }
 
-    analogWrite(PIN_LAMP1, mIntensity[LED_LAMP1]);
-    analogWrite(PIN_LAMP2, mIntensity[LED_LAMP2]);
+    analogWrite(PIN_LAMP1, 255 - mIntensity[LED_LAMP1]);
+    analogWrite(PIN_LAMP2, 255 - mIntensity[LED_LAMP2]);
 }
 
 void LEDDriver::updateLEDs(bool force) {

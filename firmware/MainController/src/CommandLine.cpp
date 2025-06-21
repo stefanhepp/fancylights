@@ -172,15 +172,12 @@ void CommandLine::abortCommand()
 
 void CommandLine::processToken()
 {
-    if (mExpectCommand) {
-        if (mCurrentCommand == -1) {
-            // We are starting a new command
-            selectCommand();
-        } else {
-            // Got another argument
-            processArgument();
-        }
-
+    if (mExpectCommand && mCurrentCommand == -1) {
+        // We are starting a new command
+        selectCommand();
+    } else if (mExpectArgument) {
+        // Got another argument
+        processArgument();
     } else {
         if (mCurrentCommand != -1) {
             // Received another argument that the command was not expecting

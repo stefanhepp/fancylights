@@ -39,6 +39,8 @@ uint8_t CntStatusTimeout = 0;
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 
+void sendStatus();
+
 class StatusParser: public CommandParser
 {
     public:
@@ -128,6 +130,50 @@ class WiFiParser: public CommandParser {
         }
 
         virtual CmdExecStatus completeCommand(bool expectCommand) {
+            return CmdExecStatus::CESOK;
+        }
+};
+
+class LEDParser: public CommandParser {
+    private:
+        RGBMode mMode;
+        bool    mLEDEnable;
+
+    public:
+        LEDParser() {}
+
+        virtual void printArguments() {
+            Serial.print("on|off|cycle");
+        }
+
+        virtual CmdParseStatus startCommand(const char* cmd) {
+            return CPSNextArgument;
+        }
+
+        virtual CmdParseStatus parseNextArgument(int argNo, const char* arg) {
+            if (strcmp(arg, "on") == 0) {
+                mLEDEnable = true;
+                mMode = RGB_ON;
+                return CPSComplete;
+            }
+            if (strcmp(arg, "off") == 0) {
+                mLEDEnable = false;
+                mMode = RGB_ON;
+                return CPSComplete;
+            }
+            if (strcmp(arg, "cycle") == 0) {
+                mLEDEnable = true;
+                mMode = RGB_CYCLE;
+                return CPSComplete;
+            }            
+            return CPSInvalidArgument;
+        }
+
+        virtual CmdExecStatus completeCommand(bool expectCommand) {
+            LEDs.enableLEDStrip(mLEDEnable);
+            LEDs.enableLamps(mLEDEnable);
+            LEDs.setRGBMode(mMode);
+            sendStatus();
             return CmdExecStatus::CESOK;
         }
 };
@@ -244,6 +290,7 @@ void setup() {
 
     cmdline.begin();
     cmdline.addCommand("status", new StatusParser());
+    cmdline.addCommand("led", new LEDParser());
     cmdline.addCommand("wifi", new WiFiParser());
 
     LEDs.begin();
