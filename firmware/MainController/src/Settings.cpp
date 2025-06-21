@@ -29,7 +29,7 @@ void Settings::begin()
 
 bool Settings::isLampEnabled()
 {
-    return myPrefs.getUChar("LampOn", 0);
+    return myPrefs.getUChar("lampOn", 0);
 }
 
 bool Settings::isLEDStripEnabled()

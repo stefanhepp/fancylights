@@ -4,7 +4,7 @@
  *
  * Main loop implementation.
  *
- * Copyright 2024 Stefan Hepp
+ * Copyright 2025 Stefan Hepp
  * License: GPL v3
  * See 'COPYRIGHT.txt' for copyright and licensing information.
  */
@@ -16,6 +16,19 @@
 #include "config.h"
 
 static const uint8_t IRQ_BUTTONS = 0;
+
+void sendStatus() {
+    uint8_t switchStatus = digitalRead(PIN_ENDSTOP);
+
+    Serial.write(ProjectorOpcode::POP_STATUS);
+    Serial.write(switchStatus);
+}
+
+void processSerial(uint8_t data) {
+    if (data == ProjectorOpcode::POP_STATUS) {
+        sendStatus();
+    }
+}
 
 void setup() {
     // Enable pullups for unconnected pins
@@ -36,14 +49,24 @@ void setup() {
     pinMode(PIN_PD5, INPUT_PULLUP);
     pinMode(PIN_PD7, INPUT_PULLUP);
 
+    pinMode(PIN_ENDSTOP, INPUT_PULLUP);
+
+    pinMode(PIN_SERVO_ENABLE, OUTPUT);
+    pinMode(PIN_SERVO_PWM,    OUTPUT);
+    digitalWrite(PIN_SERVO_ENABLE, HIGH);
+    digitalWrite(PIN_SERVO_PWM,    LOW);
+
     pinMode(PIN_SW_RXD, INPUT_PULLUP);
     pinMode(PIN_SW_TXD, OUTPUT);
-
     digitalWrite(PIN_SW_TXD, HIGH);
 
     Serial.begin(UART_SPEED_PROJECTOR);
 }
 
 void loop() {
+    while (Serial.available()) {
+        uint8_t data = Serial.read();
+        processSerial(data);
+    }
 
 }

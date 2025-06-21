@@ -16,7 +16,9 @@
 
 #include "Settings.h"
 
-using StatusCallback = void(*)(bool powerOn);
+using StatusCallback = void(*)(bool switchState, bool powerOn);
+
+static const int COM_BUF_SIZE = 4;
 
 class ProjectorController {
     private:
@@ -27,6 +29,11 @@ class ProjectorController {
         uint8_t mCntPulse = 0;
 
         Settings mSettings;
+
+        int     mBufferSize = 0;
+        uint8_t mCommandData[COM_BUF_SIZE];
+
+        void processSerialData(uint8_t data);
 
     public:
         explicit ProjectorController(Settings &settings);

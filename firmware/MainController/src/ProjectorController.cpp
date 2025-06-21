@@ -46,7 +46,34 @@ void ProjectorController::moveScreen(LiftCommand direction)
 
 void ProjectorController::requestStatus()
 {
+    // Request status from projector controller
+    projectorSerial.write(ProjectorOpcode::POP_STATUS);
+}
 
+void ProjectorController::processSerialData(uint8_t data)
+{
+    mCommandData[mBufferSize++] = data;
+
+    switch (mCommandData[0]) {
+        case ProjectorOpcode::POP_STATUS:
+            if (mBufferSize >= 2) {
+                bool powerOn = ((mCommandData[1]>>1) & 0x01);
+                bool switchState = (mCommandData[1] & 0x01);
+
+                if (mStatusCallback) {
+                    mStatusCallback(switchState, powerOn);
+                }
+
+                // finish the command
+                mBufferSize = 0;
+            }
+            break;
+    }
+
+    if (mBufferSize >= COM_BUF_SIZE) {
+        // reset command buffer when full
+        mBufferSize = 0;
+    }
 }
 
 void ProjectorController::begin()
@@ -81,6 +108,6 @@ void ProjectorController::loop()
     while (projectorSerial.available()) {
         char data = projectorSerial.read();
 
-        //processCommand(data);
+        processSerialData(data);
     }
 }

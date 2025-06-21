@@ -80,6 +80,19 @@ enum CommandOpcode : uint8_t {
     CMD_READ_STATUS       = 0x12
 };
 
+enum ProjectorOpcode : uint8_t {
+    // Request status; return value = <..|1:Power On|0:Switch>
+    POP_STATUS            = 0x01,
+    // Request to lock when endstop is reached
+    POP_LOCK              = 0x02,
+    // Request to unlock
+    POP_UNLOCK            = 0x03,
+    // Power projector on/off
+    POP_POWER             = 0x04,
+    // Projector set mode
+    POP_MODE              = 0x05
+};
+
 enum RGBMode : uint8_t {
     // Permanent on
     RGB_ON      = 0x00,

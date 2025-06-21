@@ -110,6 +110,8 @@ class StatusParser: public CommandParser
             Serial.printf("Projector Mode: "); printProjectorCommand(Projector.mode()); Serial.println();
             Serial.printf("HSV: %hhu %hhu %hhu\n", LEDs.getHSV().hue, LEDs.getHSV().sat, LEDs.getHSV().val);
 
+            Projector.requestStatus();
+
             return CmdExecStatus::CESOK;
         }
 };
@@ -191,9 +193,12 @@ void sendStatus()
     keypadSerial.write(LEDs.getHSV().val);
 }
 
-void onProjectorStatus(bool powerOn) {
+void onProjectorStatus(bool switchState, bool powerOn) {
     CntStatusTimeout = 0;
-    sendStatus();
+
+    Serial.print("[Projector] Status: Power "); StatusParser::printBool(powerOn);
+    Serial.print(", Switch: "); StatusParser::printBool(switchState);
+    Serial.println();
 }
 
 void processCommand(uint8_t data)
@@ -235,7 +240,7 @@ void processCommand(uint8_t data)
                 LEDs.enableLEDStrip(UARTBuffer[1] & 0x02);
                 UARTBufferLength = 0;
                 Serial.print("[Kbd] Enable lamp: "); StatusParser::printBool(UARTBuffer[1] & 0x01);
-                Serial.print(", LED strip: "); StatusParser::printBool(UARTBuffer[1] & 0x02);
+                Serial.print(", LED strip: ");       StatusParser::printBool(UARTBuffer[1] & 0x02);
                 Serial.println();
             }
             break;
@@ -300,7 +305,7 @@ void setup() {
 
     keypadSerial.begin(UART_SPEED_CONTROLLER, SERIAL_8N1, PIN_KP_RXD, PIN_KP_TXD);
 
-    WiFi.begin("HomeLan", "");
+    WiFi.begin("", "");
 
     mqttClient.setServer("mqtt.home", 1883);
 }
@@ -326,7 +331,7 @@ void loop() {
 
     EVERY_N_SECONDS( 1 ) {
         if (WiFi.status() == WL_CONNECTED && !mqttClient.connected()) {
-
+            
         }
     }
 }
