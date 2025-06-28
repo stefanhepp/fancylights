@@ -12,6 +12,8 @@
 #ifndef __SETTINGS_H__
 #define __SETTINGS_H__
 
+#include <Arduino.h>
+
 #include <inttypes.h>
 
 #include <chsv.h>
@@ -35,6 +37,18 @@ class Settings
 
         CHSV getHSV();
 
+        String getWiFiSSID();
+
+        String getWiFiPassword();
+
+        String getHostname();
+
+        String getMQTTServer();
+
+        String getMQTTTopic();
+
+        uint16_t getMQTTPort();
+
 
         void setLampEnabled(bool enabled);
 
@@ -47,6 +61,12 @@ class Settings
         void setDimmedIntensity(uint8_t intensity);
 
         void setHSV(uint8_t hue, uint8_t saturation, uint8_t value);
+
+        void setWiFiAccess(const char *ssid, const char *password);
+
+        void setHostname(const char *hostname);
+
+        void setMQTTServer(const char *server, uint16_t port, const char *topic);
 
         void begin();
 };

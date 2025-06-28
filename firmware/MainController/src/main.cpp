@@ -22,6 +22,7 @@
 #include "LED.h"
 #include "Settings.h"
 #include "ProjectorController.h"
+#include "MqttClient.h"
 
 Settings settings;
 CommandLine cmdline;
@@ -36,8 +37,7 @@ static uint8_t UARTBufferLength = 0;
 
 uint8_t CntStatusTimeout = 0;
 
-WiFiClient wifiClient;
-PubSubClient mqttClient(wifiClient);
+MqttClient mqttClient(settings);
 
 void sendStatus();
 
@@ -109,6 +109,11 @@ class StatusParser: public CommandParser
             Serial.printf("RGB Strip Mode: "); printRGBMode(LEDs.rgbMode()); Serial.println();
             Serial.printf("Projector Mode: "); printProjectorCommand(Projector.mode()); Serial.println();
             Serial.printf("HSV: %hhu %hhu %hhu\n", LEDs.getHSV().hue, LEDs.getHSV().sat, LEDs.getHSV().val);
+            Serial.printf("WiFi SSID: %s PW: %s\n", settings.getWiFiSSID(), settings.getWiFiPassword());
+            Serial.printf("WiFi Hostname %s IP %s\n", WiFi.getHostname(), WiFi.localIP().toString());
+            Serial.printf("WiFi Status %s\n", WiFi.status() == WL_CONNECTED ? "connected" : "not connected");
+            Serial.printf("MQTT Server %s:%d\n", settings.getMQTTServer(), settings.getMQTTPort());
+            Serial.printf("MQTT Status %s\n", mqttClient.connected() ? "connected" : "not connected");
 
             Projector.requestStatus();
 
@@ -121,10 +126,32 @@ class WiFiParser: public CommandParser {
         WiFiParser() {}
 
         virtual void printArguments() {
+            Serial.print("ap <ssid> <password>|hostname <hostname>|connect");
         }
 
         virtual CmdParseStatus startCommand(const char* cmd) {
-            return CPSComplete;
+            return CPSNextArgument;
+        }
+
+        virtual CmdParseStatus parseNextArgument(int argNo, const char* arg) {
+            return CPSInvalidArgument;
+        }
+
+        virtual CmdExecStatus completeCommand(bool expectCommand) {
+            return CmdExecStatus::CESOK;
+        }
+};
+
+class MQTTParser: public CommandParser {
+    public:
+        MQTTParser() {}
+
+        virtual void printArguments() {
+            Serial.print("server <hostname> <port>|topic <topic>|client <clientID>|user <user> <pw>");
+        }
+
+        virtual CmdParseStatus startCommand(const char* cmd) {
+            return CPSNextArgument;
         }
 
         virtual CmdParseStatus parseNextArgument(int argNo, const char* arg) {
@@ -138,8 +165,10 @@ class WiFiParser: public CommandParser {
 
 class LEDParser: public CommandParser {
     private:
+        CommandOpcode mCommand;
         RGBMode mMode;
         bool    mLEDEnable;
+        CHSV    mColor;
 
     public:
         LEDParser() {}
@@ -149,34 +178,69 @@ class LEDParser: public CommandParser {
         }
 
         virtual CmdParseStatus startCommand(const char* cmd) {
+            mCommand = CMD_READ_STATUS;
+
             return CPSNextArgument;
         }
 
         virtual CmdParseStatus parseNextArgument(int argNo, const char* arg) {
-            if (strcmp(arg, "on") == 0) {
-                mLEDEnable = true;
-                mMode = RGB_ON;
-                return CPSComplete;
+            if (argNo == 0) {
+                if (strcmp(arg, "on") == 0) {
+                    mCommand = CMD_RGB_MODE;
+                    mLEDEnable = true;
+                    mMode = RGB_ON;
+                    return CPSComplete;
+                }
+                if (strcmp(arg, "off") == 0) {
+                    mCommand = CMD_RGB_MODE;
+                    mLEDEnable = false;
+                    mMode = RGB_ON;
+                    return CPSComplete;
+                }
+                if (strcmp(arg, "cycle") == 0) {
+                    mCommand = CMD_RGB_MODE;
+                    mLEDEnable = true;
+                    mMode = RGB_CYCLE;
+                    return CPSComplete;
+                }
+                if (strcmp(arg, "color") == 0) {
+                    mCommand = CMD_HSV_COLOR;
+                    return CPSNextArgument;
+                }
+                return CPSInvalidArgument;
             }
-            if (strcmp(arg, "off") == 0) {
-                mLEDEnable = false;
-                mMode = RGB_ON;
-                return CPSComplete;
+            if (mCommand == CMD_HSV_COLOR) {
+                if (argNo > 0 and argNo < 4) {
+                    int v;
+                    if (parseInteger(arg, v, 0, 255)) {
+                        mColor[argNo-1] = v;
+                        if (argNo < 3) {
+                            return CPSNextArgument;
+                        } else {
+                            return CPSComplete;
+                        }
+                    } else {
+                        return CPSInvalidArgument;
+                    }
+                }
             }
-            if (strcmp(arg, "cycle") == 0) {
-                mLEDEnable = true;
-                mMode = RGB_CYCLE;
-                return CPSComplete;
-            }            
             return CPSInvalidArgument;
         }
 
         virtual CmdExecStatus completeCommand(bool expectCommand) {
-            LEDs.enableLEDStrip(mLEDEnable);
-            LEDs.enableLamps(mLEDEnable);
-            LEDs.setRGBMode(mMode);
-            sendStatus();
-            return CmdExecStatus::CESOK;
+            if (mCommand == CMD_RGB_MODE) {
+                LEDs.enableLEDStrip(mLEDEnable);
+                LEDs.enableLamps(mLEDEnable);
+                LEDs.setRGBMode(mMode);
+                sendStatus();
+                return CmdExecStatus::CESOK;
+            }
+            if (mCommand == CMD_HSV_COLOR) {
+                LEDs.setHSV(mColor.h, mColor.s, mColor.v);
+                sendStatus();
+                return CmdExecStatus::CESOK;
+            }
+            return CmdExecStatus::CESInvalidArgument;
         }
 };
 
@@ -290,6 +354,41 @@ void processCommand(uint8_t data)
     }
 }
 
+void checkWiFiConnection()
+{
+    if (WiFi.status() != WL_CONNECTED) {
+        Serial.printf("[WiFi] Not connected. Reconnecting ..\n");
+        WiFi.disconnect();
+        WiFi.reconnect();
+    }
+}
+
+void checkMQTTConnection() 
+{
+    if (WiFi.status() == WL_CONNECTED && !mqttClient.connected())
+    {
+        if (mqttClient.connect(settings.getMQTTClientID().c_str(), 
+                               settings.getMQTTUsername().c_str(),
+                               settings.getMQTTPassword().c_str()))
+        {
+            Serial.printf("[MQTT] Client %s connected!\n", settings.getMQTTClientID().c_str());
+        } else {
+            Serial.printf("[MQTT] Connect failed (state %d)\n", mqttClient.state());
+        }
+    }
+}
+
+void mqttCallback(char *topic, byte *payload, unsigned int length)
+{
+    Serial.printf("[MQTT] Received topic %s, message: ", topic);
+    for (int i = 0; i < length; i++) {
+        Serial.print((char) payload[i]);
+    }
+    Serial.println();
+
+
+}
+
 void setup() {
     settings.begin();
 
@@ -305,9 +404,12 @@ void setup() {
 
     keypadSerial.begin(UART_SPEED_CONTROLLER, SERIAL_8N1, PIN_KP_RXD, PIN_KP_TXD);
 
-    WiFi.begin("", "");
+    WiFi.mode(WIFI_STA);
+    WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
+    WiFi.setHostname(settings.getHostname().c_str());
+    WiFi.begin(settings.getWiFiSSID(), settings.getWiFiPassword());
 
-    mqttClient.setServer("mqtt.home", 1883);
+    mqttClient.setup(mqttCallback);
 }
 
 void loop() {
@@ -328,10 +430,10 @@ void loop() {
     cmdline.loop();
     LEDs.loop();
     Projector.loop();
+    mqttClient.loop();
 
     EVERY_N_SECONDS( 1 ) {
-        if (WiFi.status() == WL_CONNECTED && !mqttClient.connected()) {
-            
-        }
+        checkWiFiConnection();
+        checkMQTTConnection();
     }
 }

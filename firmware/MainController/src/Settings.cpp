@@ -96,3 +96,51 @@ void Settings::setHSV(uint8_t hue, uint8_t saturation, uint8_t value)
     uint8_t hsv[3] = {hue, saturation, value};
     myPrefs.putBytes("hsv", hsv, sizeof(hsv));
 }
+
+String Settings::getWiFiSSID()
+{
+    return myPrefs.getString("wifiSSID");
+}
+
+String Settings::getWiFiPassword()
+{
+    return myPrefs.getString("wifiPW");
+}
+
+void Settings::setWiFiAccess(const char *ssid, const char *password)
+{
+    myPrefs.putString("wifiSSID", ssid);
+    myPrefs.putString("wifiPW", password);
+}
+
+String Settings::getHostname()
+{
+    return myPrefs.getString("hostname", "fancyled.home");
+}
+
+void Settings::setHostname(const char *hostname)
+{
+    myPrefs.putString("hostname", hostname);
+}
+
+String Settings::getMQTTServer()
+{
+    return myPrefs.getString("mqttServer", "homectl.home");
+}
+
+String Settings::getMQTTTopic()
+{
+    return myPrefs.getString("mqttTopic", "leds");
+}
+
+uint16_t Settings::getMQTTPort()
+{
+    return myPrefs.getUShort("mqttPort", 1883);
+}
+
+void Settings::setMQTTServer(const char *server, uint16_t port, const char *topic)
+{
+    myPrefs.putString("mqttServer", server);
+    myPrefs.putUShort("mqttPort", port);
+    myPrefs.putString("mqttTopic", topic);
+}
