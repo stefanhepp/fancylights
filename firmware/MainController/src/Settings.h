@@ -49,6 +49,12 @@ class Settings
 
         uint16_t getMQTTPort();
 
+        String getMQTTClientID();
+
+        String getMQTTUsername();
+
+        String getMQTTPassword();
+
 
         void setLampEnabled(bool enabled);
 
@@ -67,6 +73,8 @@ class Settings
         void setHostname(const char *hostname);
 
         void setMQTTServer(const char *server, uint16_t port, const char *topic);
+
+        void setMQTTClient(const char *clientID, const char *username, const char *password);
 
         void begin();
 };

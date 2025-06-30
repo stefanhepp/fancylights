@@ -18,7 +18,7 @@
 
 using MqttCallback = void(*)(char *topic, byte *payload, unsigned int length);
 
-class MqttClient
+class MqttBroker
 {
     private:
         Settings &mSettings;
@@ -26,14 +26,16 @@ class MqttClient
         WiFiClient mWifiClient;
         PubSubClient mMqttClient;
 
+        void mqttCallback(char* topic, byte *payload, unsigned int length);
+
     public:
-        MqttClient(Settings &settings);
+        MqttBroker(Settings &settings);
 
         bool connected() { return mMqttClient.connected(); }
 
         bool connect();
 
-        void setup(MqttCallback callback);
+        void setup();
 
         void loop();
 };

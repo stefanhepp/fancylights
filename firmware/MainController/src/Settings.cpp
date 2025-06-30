@@ -144,3 +144,25 @@ void Settings::setMQTTServer(const char *server, uint16_t port, const char *topi
     myPrefs.putUShort("mqttPort", port);
     myPrefs.putString("mqttTopic", topic);
 }
+
+String Settings::getMQTTClientID()
+{
+    return myPrefs.getString("mqttClient", "fancyleds");
+}
+
+String Settings::getMQTTUsername()
+{
+    return myPrefs.getString("mqttUser");
+}
+
+String Settings::getMQTTPassword()
+{
+    return myPrefs.getString("mqttPass");
+}
+
+void Settings::setMQTTClient(const char *clientId, const char *username, const char *password)
+{
+    myPrefs.putString("mqttClient", clientId);
+    myPrefs.putString("mqttUser", username);
+    myPrefs.putString("mqttPass", password);
+}

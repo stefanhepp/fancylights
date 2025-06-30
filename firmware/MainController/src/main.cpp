@@ -22,7 +22,7 @@
 #include "LED.h"
 #include "Settings.h"
 #include "ProjectorController.h"
-#include "MqttClient.h"
+#include "MqttBroker.h"
 
 Settings settings;
 CommandLine cmdline;
@@ -37,7 +37,7 @@ static uint8_t UARTBufferLength = 0;
 
 uint8_t CntStatusTimeout = 0;
 
-MqttClient mqttClient(settings);
+MqttBroker mqttBroker(settings);
 
 void sendStatus();
 
@@ -113,7 +113,7 @@ class StatusParser: public CommandParser
             Serial.printf("WiFi Hostname %s IP %s\n", WiFi.getHostname(), WiFi.localIP().toString());
             Serial.printf("WiFi Status %s\n", WiFi.status() == WL_CONNECTED ? "connected" : "not connected");
             Serial.printf("MQTT Server %s:%d\n", settings.getMQTTServer(), settings.getMQTTPort());
-            Serial.printf("MQTT Status %s\n", mqttClient.connected() ? "connected" : "not connected");
+            Serial.printf("MQTT Status %s\n", mqttBroker.connected() ? "connected" : "not connected");
 
             Projector.requestStatus();
 
@@ -365,28 +365,10 @@ void checkWiFiConnection()
 
 void checkMQTTConnection() 
 {
-    if (WiFi.status() == WL_CONNECTED && !mqttClient.connected())
+    if (WiFi.status() == WL_CONNECTED && !mqttBroker.connected())
     {
-        if (mqttClient.connect(settings.getMQTTClientID().c_str(), 
-                               settings.getMQTTUsername().c_str(),
-                               settings.getMQTTPassword().c_str()))
-        {
-            Serial.printf("[MQTT] Client %s connected!\n", settings.getMQTTClientID().c_str());
-        } else {
-            Serial.printf("[MQTT] Connect failed (state %d)\n", mqttClient.state());
-        }
+        mqttBroker.connect();
     }
-}
-
-void mqttCallback(char *topic, byte *payload, unsigned int length)
-{
-    Serial.printf("[MQTT] Received topic %s, message: ", topic);
-    for (int i = 0; i < length; i++) {
-        Serial.print((char) payload[i]);
-    }
-    Serial.println();
-
-
 }
 
 void setup() {
@@ -409,7 +391,7 @@ void setup() {
     WiFi.setHostname(settings.getHostname().c_str());
     WiFi.begin(settings.getWiFiSSID(), settings.getWiFiPassword());
 
-    mqttClient.setup(mqttCallback);
+    mqttBroker.setup();
 }
 
 void loop() {
@@ -430,7 +412,7 @@ void loop() {
     cmdline.loop();
     LEDs.loop();
     Projector.loop();
-    mqttClient.loop();
+    mqttBroker.loop();
 
     EVERY_N_SECONDS( 1 ) {
         checkWiFiConnection();
