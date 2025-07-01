@@ -111,8 +111,10 @@ class StatusParser: public CommandParser
             Serial.printf("HSV: %hhu %hhu %hhu\n", LEDs.getHSV().hue, LEDs.getHSV().sat, LEDs.getHSV().val);
             Serial.printf("WiFi SSID: %s PW: %s\n", settings.getWiFiSSID(), settings.getWiFiPassword());
             Serial.printf("WiFi Hostname %s IP %s\n", WiFi.getHostname(), WiFi.localIP().toString());
-            Serial.printf("WiFi Status %s\n", WiFi.status() == WL_CONNECTED ? "connected" : "not connected");
+            Serial.printf("WiFi Status (%d) %s\n", WiFi.status(), WiFi.status() == WL_CONNECTED ? "connected" : "not connected");
             Serial.printf("MQTT Server %s:%d\n", settings.getMQTTServer(), settings.getMQTTPort());
+            Serial.printf("MQTT Client %s Topic %s\n", settings.getMQTTClientID(), settings.getMQTTTopic());
+            Serial.printf("MQTT User %s Pass: %s\n", settings.getMQTTUsername(), settings.getMQTTPassword());
             Serial.printf("MQTT Status %s\n", mqttBroker.connected() ? "connected" : "not connected");
 
             Projector.requestStatus();
@@ -122,6 +124,19 @@ class StatusParser: public CommandParser
 };
 
 class WiFiParser: public CommandParser {
+    private:
+        enum WiFiCommand {
+            WIC_NONE,
+            WIC_AP,
+            WIC_HOSTNAME,
+            WIC_CONNECT
+        };
+        WiFiCommand mCmd;
+
+        String mSSID;
+        String mPassword;
+        String mHostname;
+
     public:
         WiFiParser() {}
 
@@ -130,19 +145,84 @@ class WiFiParser: public CommandParser {
         }
 
         virtual CmdParseStatus startCommand(const char* cmd) {
+            mCmd = WIC_NONE;
             return CPSNextArgument;
         }
 
         virtual CmdParseStatus parseNextArgument(int argNo, const char* arg) {
+            if (argNo == 0) {
+                if (strcmp(arg, "ap") == 0) {
+                    mCmd = WIC_AP;
+                    return CPSNextArgument;
+                }
+                if (strcmp(arg, "hostname") == 0) {
+                    mCmd = WIC_HOSTNAME;
+                    return CPSNextArgument;
+                }
+                if (strcmp(arg, "CONNECT") == 0) {
+                    mCmd = WIC_CONNECT;
+                    return CPSComplete;
+                }
+            }
+            if (mCmd == WIC_AP && argNo == 1) {
+                mSSID = arg;
+                return CPSNextArgument;
+            }
+            if (mCmd == WIC_AP && argNo == 2) {
+                mPassword = arg;
+                return CPSComplete;
+            }
+            if (mCmd == WIC_HOSTNAME && argNo == 1) {
+                mHostname = arg;
+                return CPSComplete;
+            }
             return CPSInvalidArgument;
         }
 
         virtual CmdExecStatus completeCommand(bool expectCommand) {
-            return CmdExecStatus::CESOK;
+            if (mCmd == WIC_AP) {
+                settings.setWiFiAccess(mSSID.c_str(), mPassword.c_str());
+                WiFi.disconnect();
+                WiFi.begin(mSSID.c_str(), mPassword.c_str());
+                WiFi.reconnect();
+                return CmdExecStatus::CESOK;
+            }
+            if (mCmd == WIC_HOSTNAME) {
+                settings.setHostname(mHostname.c_str());
+                WiFi.setHostname(mHostname.c_str());
+                return CmdExecStatus::CESOK;
+            }
+            if (mCmd == WIC_CONNECT) {
+                WiFi.disconnect();
+                WiFi.reconnect();
+                Serial.printf("[WiFi] Reconnect: %s status %d IP %s\n",
+                              WiFi.isConnected() ? "connected" : "not connected",
+                              WiFi.status(),
+                              WiFi.localIP().toString().c_str());
+                return CmdExecStatus::CESOK;
+            }
+            return CmdExecStatus::CESInvalidArgument;
         }
 };
 
 class MQTTParser: public CommandParser {
+    private:
+        enum MqttCommand {
+            MC_NONE,
+            MC_SERVER,
+            MC_TOPIC,
+            MC_CLIENT,
+            MC_USER
+        };
+
+        MqttCommand mCmd;
+        String mMqttHostname;
+        int    mMqttPort;
+        String mTopic;
+        String mClientID;
+        String mUser;
+        String mPassword;
+
     public:
         MQTTParser() {}
 
@@ -151,15 +231,78 @@ class MQTTParser: public CommandParser {
         }
 
         virtual CmdParseStatus startCommand(const char* cmd) {
+            mCmd == MC_NONE;
             return CPSNextArgument;
         }
 
         virtual CmdParseStatus parseNextArgument(int argNo, const char* arg) {
+            if (argNo == 0) {
+                if (strcmp(arg, "server") == 0) {
+                    mCmd = MC_SERVER;
+                    return CPSNextArgument;
+                }
+                if (strcmp(arg, "topic") == 0) {
+                    mCmd = MC_TOPIC;
+                    return CPSNextArgument;
+                }
+                if (strcmp(arg, "client") == 0) {
+                    mCmd = MC_CLIENT;
+                    return CPSNextArgument;
+                }
+                if (strcmp(arg, "user") == 0) {
+                    mCmd = MC_USER;
+                    return CPSNextArgument;
+                }
+            }
+            if (mCmd == MC_SERVER && argNo == 1) {
+                mMqttHostname = arg;
+                return CPSNextArgument;
+            }
+            if (mCmd == MC_SERVER && argNo == 2) {
+                if (parseInteger(arg, mMqttPort, 0, 65535)) {
+                    return CPSComplete;
+                } else {
+                    return CPSInvalidArgument;
+                }
+            }
+            if (mCmd == MC_TOPIC && argNo == 1) {
+                mTopic = arg;
+                return CPSComplete;
+            }
+            if (mCmd == MC_CLIENT && argNo == 1) {
+                mClientID = arg;
+                return CPSComplete;
+            }
+            if (mCmd == MC_USER && argNo == 1) {
+                mUser = arg;
+                return CPSNextArgument;
+            }
+            if (mCmd == MC_USER && argNo == 2) {
+                mPassword = arg;
+                return CPSComplete;
+            }
             return CPSInvalidArgument;
         }
 
         virtual CmdExecStatus completeCommand(bool expectCommand) {
-            return CmdExecStatus::CESOK;
+            // TODO reconnect MQTT connection
+            if (mCmd == MC_SERVER) {
+                settings.setMQTTServer(mMqttHostname.c_str(), mMqttPort, settings.getMQTTTopic().c_str());
+                return CESOK;
+            }
+            if (mCmd == MC_TOPIC) {
+                settings.setMQTTServer(settings.getMQTTServer().c_str(), settings.getMQTTPort(), mTopic.c_str());
+                return CESOK;
+            }
+            if (mCmd == MC_CLIENT) {
+                settings.setMQTTClient(mClientID.c_str(), settings.getMQTTUsername().c_str(), settings.getMQTTPassword().c_str());
+                return CESOK;
+            }
+            if (mCmd == MC_USER) {
+                settings.setMQTTClient(settings.getMQTTClientID().c_str(), mUser.c_str(), mPassword.c_str());
+                return CESOK;
+            }
+            return CmdExecStatus::CESInvalidArgument;
         }
 };
 
@@ -174,7 +317,7 @@ class LEDParser: public CommandParser {
         LEDParser() {}
 
         virtual void printArguments() {
-            Serial.print("on|off|cycle");
+            Serial.print("on|off|cycle|color <h> <s> <v>");
         }
 
         virtual CmdParseStatus startCommand(const char* cmd) {
@@ -378,6 +521,7 @@ void setup() {
     cmdline.addCommand("status", new StatusParser());
     cmdline.addCommand("led", new LEDParser());
     cmdline.addCommand("wifi", new WiFiParser());
+    cmdline.addCommand("mqtt", new MQTTParser());
 
     LEDs.begin();
 
@@ -414,7 +558,7 @@ void loop() {
     Projector.loop();
     mqttBroker.loop();
 
-    EVERY_N_SECONDS( 1 ) {
+    EVERY_N_SECONDS( 20 ) {
         checkWiFiConnection();
         checkMQTTConnection();
     }

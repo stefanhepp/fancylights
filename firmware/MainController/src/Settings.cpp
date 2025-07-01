@@ -99,12 +99,12 @@ void Settings::setHSV(uint8_t hue, uint8_t saturation, uint8_t value)
 
 String Settings::getWiFiSSID()
 {
-    return myPrefs.getString("wifiSSID");
+    return myPrefs.getString("wifiSSID", "");
 }
 
 String Settings::getWiFiPassword()
 {
-    return myPrefs.getString("wifiPW");
+    return myPrefs.getString("wifiPW", "");
 }
 
 void Settings::setWiFiAccess(const char *ssid, const char *password)
