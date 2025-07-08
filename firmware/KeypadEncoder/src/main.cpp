@@ -105,7 +105,7 @@ void sendHSVColor(bool sendI2C = true)
     requestStatus();
 }
 
-void processCommand(uint8_t data)
+void processKeypadCommand(uint8_t data)
 {
     if (UARTBufferLength == 0 && (data & CMD_HEADER) != CMD_HEADER) {
         // Wait for command byte, drop other data
@@ -359,6 +359,6 @@ void loop() {
     while (Serial.available()) {
         int data = Serial.read();
 
-        processCommand(data);
+        processKeypadCommand(data);
     }
 }

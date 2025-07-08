@@ -15,6 +15,7 @@
 #include <commands.h>
 
 #include "Settings.h"
+#include "MqttClient.h"
 
 using StatusCallback = void(*)(bool switchState, bool powerOn);
 
@@ -28,25 +29,30 @@ class ProjectorController {
 
         uint8_t mCntPulse = 0;
 
-        Settings mSettings;
+        Settings   &mSettings;
+        MqttClient &mMqttClient;
 
         int     mBufferSize = 0;
         uint8_t mCommandData[COM_BUF_SIZE];
 
         void processSerialData(uint8_t data);
 
+        void mqttCallback(const char *key, byte* payload, unsigned int length);
+
+        void subscribeCallback();
+
     public:
-        explicit ProjectorController(Settings &settings);
+        explicit ProjectorController(Settings &settings, MqttClient &mqttClient);
         
         void setStatusCallback(StatusCallback callback) { mStatusCallback = callback; }
 
-        void setMode(ProjectorCommand mode);
-
         ProjectorCommand mode() const { return mMode; }
 
-        void moveProjector(LiftCommand direction);
+        void setMode(ProjectorCommand mode, bool publish = true);
 
-        void moveScreen(LiftCommand direction);
+        void moveProjector(LiftCommand direction, bool publish = true);
+
+        void moveScreen(LiftCommand direction, bool publish = true);
 
         void requestStatus();
 

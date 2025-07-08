@@ -10,15 +10,27 @@
  */
 #include "LED.h"
 
+#include <functional>
+#include <ArduinoJson.h>
+#include <stdio.h>
+
 #include <commands.h>
 
 #include <FastLED.h>
 
 #include "config.h"
 
+const char *TOPIC_LAMPS_ENABLE = "lamps";
+const char *TOPIC_LEDS_ENABLE = "leds";
+const char *TOPIC_INTENSITY = "intensity";
+const char *TOPIC_DIMMED_INTENSITY = "dimmed";
+const char *TOPIC_RGBMODE = "mode";
+const char *TOPIC_COLOR_HSV = "hsv";
+const char *TOPIC_COLOR_RGB = "rgb";
 
-LEDDriver::LEDDriver(Settings &settings)
-: mSettings(settings)
+
+LEDDriver::LEDDriver(Settings &settings, MqttClient &mqttClient)
+: mSettings(settings), mMqttClient(mqttClient)
 {
     for (uint8_t i = 0; i < NUM_LAMPS; i++) {
         mIntensity[i] = 0;
@@ -65,14 +77,147 @@ void LEDDriver::updateLEDs(bool force) {
     }
 }
 
-void LEDDriver::enableLamps(bool enabled)
+void LEDDriver::mqttCallback(const char *key, byte* payload, unsigned int length)
+{
+    if (length == 0) {
+        return;
+    }
+    if (strcmp(key, TOPIC_LAMPS_ENABLE) == 0) {
+        bool val;
+        if (parseBool((char*)payload, val)) {
+            enableLamps(val, false);
+        }
+    }
+    if (strcmp(key, TOPIC_LEDS_ENABLE) == 0) {
+        bool val;
+        if (parseBool((char*)payload, val)) {
+            enableLEDStrip(val, false);
+        }
+    }
+    if (strcmp(key, TOPIC_INTENSITY) == 0) {
+        int val;
+        int result = sscanf((char*)payload, "%d", &val);
+        if (result == 1 && val >= 0 && val < 256) {
+            setIntensity(val, false);
+        }
+    }
+    if (strcmp(key, TOPIC_DIMMED_INTENSITY) == 0) {
+        int val;
+        int result = sscanf((char*)payload, "%d", &val);
+        if (result == 1 && val >= 0 && val < 256) {
+            setDimmedIntensity(val, false);
+        }
+    }
+    if (strcmp(key, TOPIC_RGBMODE) == 0) {
+        RGBMode mode;
+        if (parseRGBMode((char*)payload, mode)) {
+            setRGBMode(mode, false);
+        }
+    }
+    if (strcmp(key, TOPIC_COLOR_RGB) == 0) {
+        if (payload[0] == '#') {
+            String srgb = (char*)payload;
+            String sr = srgb.substring(1,3);
+            String sg = srgb.substring(3,5);
+            String sb = srgb.substring(5,7);
+
+            CRGB rgb;
+            rgb.r = sr.toInt();
+            rgb.g = sg.toInt();
+            rgb.b = sb.toInt();
+
+            CHSV hsv = rgb2hsv_approximate(rgb);
+
+            setHSV(hsv, false);
+        } else {
+            int r, g, b;
+            int result = sscanf((char*)payload, "rgb:(%d,%d,%d)", &r, &g, &b);
+            if (result == 3) {
+                CRGB rgb;
+                rgb.r = r;
+                rgb.g = g;
+                rgb.b = b;
+
+                CHSV hsv = rgb2hsv_approximate(rgb);
+
+                setHSV(hsv, false);
+            }
+        }
+    }
+    if (strcmp(key, TOPIC_COLOR_HSV) == 0) {
+        JsonDocument doc;
+
+        DeserializationError error = deserializeJson(doc, (char*)payload);
+
+        if (error) {
+            Serial.print("[MQTT] Deserialization failed: ");
+            Serial.println(error.f_str());
+            return;
+        }
+
+        CHSV hsv;
+        hsv.hue = doc["h"].as<unsigned char>();
+        hsv.sat = doc["s"].as<unsigned char>();
+        hsv.val = doc["v"].as<unsigned char>();
+
+        setHSV(hsv, false);
+    }
+}
+
+void LEDDriver::subscribeCallback()
+{
+    String sIntensity(mLightIntensity);
+    String sDimmedIntensity(mDimmedIntensity);
+
+    mMqttClient.publish(MQS_LEDS, TOPIC_LAMPS_ENABLE, strBool(mEnableLamps), true);
+    mMqttClient.publish(MQS_LEDS, TOPIC_LEDS_ENABLE, strBool(mEnableLEDStrip), true);
+    mMqttClient.publish(MQS_LEDS, TOPIC_INTENSITY, sIntensity.c_str(), true);
+    mMqttClient.publish(MQS_LEDS, TOPIC_DIMMED_INTENSITY, sDimmedIntensity.c_str(), true);
+    mMqttClient.publish(MQS_LEDS, TOPIC_RGBMODE, strRGBMode(mRGBMode), true);
+
+    publishColor(true);
+}
+
+void LEDDriver::appendHexCode(String &rgb, uint8_t val) {
+    String v(val, HEX);
+    if (v.length() == 1)  {
+        rgb += "0";
+    }
+    rgb += v;
+}
+
+void LEDDriver::publishColor(bool subscribe) {
+    JsonDocument doc;
+    doc["h"] = mHSV.hue;
+    doc["s"] = mHSV.saturation;
+    doc["v"] = mHSV.value;
+
+    String json;
+    serializeJson(doc, json);
+    mMqttClient.publish(MQS_LEDS, TOPIC_COLOR_HSV, json.c_str(), subscribe);
+
+    CRGB rgb;
+    hsv2rgb_rainbow(mHSV, rgb);
+
+    String sRGB = "#";
+    appendHexCode(sRGB, rgb.r);
+    appendHexCode(sRGB, rgb.g);
+    appendHexCode(sRGB, rgb.b);
+
+    mMqttClient.publish(MQS_LEDS, TOPIC_COLOR_RGB, sRGB.c_str(), subscribe);
+}
+
+void LEDDriver::enableLamps(bool enabled, bool publish)
 {
     mEnableLamps = enabled;
     mSettings.setLampEnabled(enabled);
     updateIntensity();
+    if (publish) {
+        mMqttClient.publish(MQS_LEDS, TOPIC_LAMPS_ENABLE, strBool(mEnableLamps), true);
+    }
 }
 
-void LEDDriver::enableLEDStrip(bool enabled)
+void LEDDriver::enableLEDStrip(bool enabled, bool publish)
 {
     mEnableLEDStrip = enabled;
     mSettings.setLEDStripEnabled(enabled);
@@ -81,38 +226,65 @@ void LEDDriver::enableLEDStrip(bool enabled)
 
     updateIntensity();
     updateLEDs(true);
+
+    if (publish) {
+        mMqttClient.publish(MQS_LEDS, TOPIC_LEDS_ENABLE, strBool(mEnableLEDStrip), true);
+    }
 }
 
-void LEDDriver::setRGBMode(RGBMode mode)
+void LEDDriver::setRGBMode(RGBMode mode, bool publish)
 {
     mRGBMode = mode;
     mSettings.setRGBMode(mode);
     updateLEDs(true);
+    if (publish) {
+        mMqttClient.publish(MQS_LEDS, TOPIC_RGBMODE, strRGBMode(mRGBMode), true);
+    }
 }
 
-void LEDDriver::setIntensity(uint8_t value)
+void LEDDriver::setIntensity(uint8_t value, bool publish)
 {
     mLightIntensity = value;
     mSettings.setIntensity(value);
     updateIntensity();
+
+    if (publish) {
+        String sIntensity(mLightIntensity);
+        mMqttClient.publish(MQS_LEDS, TOPIC_INTENSITY, sIntensity.c_str(), true);
+    }
 }
 
-void LEDDriver::setDimmedIntensity(uint8_t value)
+void LEDDriver::setDimmedIntensity(uint8_t value, bool publish)
 {
     mDimmedIntensity = value;
     mSettings.setDimmedIntensity(value);
     updateIntensity();
+
+    if (publish) {
+        String sDimmedIntensity(mDimmedIntensity);
+        mMqttClient.publish(MQS_LEDS, TOPIC_DIMMED_INTENSITY, sDimmedIntensity.c_str(), true);
+    }
 }
 
-void LEDDriver::setHSV(uint8_t hue, uint8_t saturation, uint8_t value)
+void LEDDriver::setHSV(CHSV hsv, bool publish)
+{
+    setHSV(hsv.h, hsv.s, hsv.v, publish);
+}
+
+void LEDDriver::setHSV(uint8_t hue, uint8_t saturation, uint8_t value, bool publish)
 {
     mHSV.setHSV(hue, saturation, value);
     mSettings.setHSV(hue, saturation, value);
     updateLEDs(true);
+    if (publish) {
+        publishColor();
+    }
 }
 
 void LEDDriver::begin()
 {
+    using namespace std::placeholders;
+
     analogWriteFrequency(5000);
     analogWriteResolution(8);
 
@@ -135,6 +307,11 @@ void LEDDriver::begin()
 
     updateIntensity();
     updateLEDs(true);
+
+    auto callback = std::bind(&LEDDriver::mqttCallback, this, _1, _2, _3);
+    auto subscribeCallback = std::bind(&LEDDriver::subscribeCallback, this);
+
+    mMqttClient.registerClient(MQS_LEDS, callback, subscribeCallback);
 }
 
 void LEDDriver::loop()

@@ -50,7 +50,7 @@ class Settings
         uint16_t getMQTTPort();
 
         String getMQTTClientID();
-
+        
         String getMQTTUsername();
 
         String getMQTTPassword();

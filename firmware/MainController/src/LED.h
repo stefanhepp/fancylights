@@ -18,6 +18,7 @@
 #include <commands.h>
 
 #include "Settings.h"
+#include "MqttClient.h"
 
 static const uint8_t NUM_LAMPS = 2;
 
@@ -28,7 +29,8 @@ static const uint8_t NUM_LEDS = 60 * 4;
 
 class LEDDriver {
     private:
-        Settings &mSettings;
+        Settings   &mSettings;
+        MqttClient &mMqttClient;
 
         CHSV    mHSV;
     
@@ -47,8 +49,16 @@ class LEDDriver {
 
         void updateLEDs(bool force = false);
 
+        void mqttCallback(const char *key, byte* payload, unsigned int length);
+
+        void subscribeCallback();
+
+        void publishColor(bool subscribe = false);
+
+        void appendHexCode(String &rgb, uint8_t val);
+
     public:
-        explicit LEDDriver(Settings &settings);
+        explicit LEDDriver(Settings &settings, MqttClient &mqttClient);
 
 
         bool    isLampEnabled() { return mEnableLamps; }
@@ -65,18 +75,20 @@ class LEDDriver {
         const CHSV &getHSV() const { return mHSV; }
 
 
-        void enableLamps(bool enabled);
+        void enableLamps(bool enabled, bool publish = true);
 
-        void enableLEDStrip(bool enabled);
+        void enableLEDStrip(bool enabled, bool publish = true);
 
-        void setIntensity(uint8_t intensity);
+        void setIntensity(uint8_t intensity, bool publish = true);
 
-        void setDimmedIntensity(uint8_t intensity);
+        void setDimmedIntensity(uint8_t intensity, bool publish = true);
 
 
-        void setRGBMode(RGBMode mode);
+        void setRGBMode(RGBMode mode, bool publish = true);
 
-        void setHSV(uint8_t hue, uint8_t saturation, uint8_t value);
+        void setHSV(CHSV hsv, bool publish = true);
+
+        void setHSV(uint8_t hue, uint8_t saturation, uint8_t value, bool publish = true);
 
         /**
          * Initialize all input ports and routines.
