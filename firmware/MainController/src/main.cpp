@@ -47,6 +47,9 @@ class StatusParser: public CommandParser
         StatusParser() {}
 
         virtual CmdExecStatus completeCommand(bool expectCommand) {
+            IPAddress mqttAddr;
+            WiFi.hostByName(settings.getMQTTServer().c_str(), mqttAddr);
+
             Serial.printf("Enable Lamp: %s, LED Strip: %s\n", strBool(LEDs.isLampEnabled()), strBool(LEDs.isLEDStripEnabled()));
             Serial.printf("Light Intensity: %hhu\n", LEDs.intensity());
             Serial.printf("Dimmed Intensity: %hhu\n", LEDs.dimmedIntensity());
@@ -54,9 +57,9 @@ class StatusParser: public CommandParser
             Serial.printf("Projector Mode: %s\n", strProjectorCommand(Projector.mode()));
             Serial.printf("HSV: %hhu %hhu %hhu\n", LEDs.getHSV().hue, LEDs.getHSV().sat, LEDs.getHSV().val);
             Serial.printf("WiFi SSID: %s PW: %s\n", settings.getWiFiSSID(), settings.getWiFiPassword());
-            Serial.printf("WiFi Hostname %s IP %s\n", WiFi.getHostname(), WiFi.localIP().toString());
+            Serial.printf("WiFi Hostname %s IP %s DNS %s\n", WiFi.getHostname(), WiFi.localIP().toString(), WiFi.dnsIP().toString());
             Serial.printf("WiFi Status (%d) %s\n", WiFi.status(), WiFi.status() == WL_CONNECTED ? "connected" : "not connected");
-            Serial.printf("MQTT Server %s:%d\n", settings.getMQTTServer(), settings.getMQTTPort());
+            Serial.printf("MQTT Server %s:%d IP: %s\n", settings.getMQTTServer(), settings.getMQTTPort(), mqttAddr.toString());
             Serial.printf("MQTT Client %s Topic %s\n", settings.getMQTTClientID(), settings.getMQTTTopic());
             Serial.printf("MQTT User %s Pass: %s\n", settings.getMQTTUsername(), settings.getMQTTPassword());
             Serial.printf("MQTT Status %s\n", mqttClient.connected() ? "connected" : "not connected");
@@ -85,7 +88,7 @@ class WiFiParser: public CommandParser {
         WiFiParser() {}
 
         virtual void printArguments() {
-            Serial.print("ap <ssid> <password>|hostname <hostname>|connect");
+            Serial.print("ap <ssid> <password>|hostname <hostname>|reconnect");
         }
 
         virtual CmdParseStatus startCommand(const char* cmd) {
@@ -103,7 +106,7 @@ class WiFiParser: public CommandParser {
                     mCmd = WIC_HOSTNAME;
                     return CPSNextArgument;
                 }
-                if (strcmp(arg, "CONNECT") == 0) {
+                if (strcmp(arg, "reconnect") == 0) {
                     mCmd = WIC_CONNECT;
                     return CPSComplete;
                 }
@@ -156,7 +159,8 @@ class MQTTParser: public CommandParser {
             MC_SERVER,
             MC_TOPIC,
             MC_CLIENT,
-            MC_USER
+            MC_USER,
+            MC_CONNECT
         };
 
         MqttCommand mCmd;
@@ -171,7 +175,7 @@ class MQTTParser: public CommandParser {
         MQTTParser() {}
 
         virtual void printArguments() {
-            Serial.print("server <hostname> <port>|topic <topic>|client <clientID>|user <user> <pw>");
+            Serial.print("server <hostname> <port>|topic <topic>|client <clientID>|user <user> <pw>|reconnect");
         }
 
         virtual CmdParseStatus startCommand(const char* cmd) {
@@ -196,6 +200,10 @@ class MQTTParser: public CommandParser {
                 if (strcmp(arg, "user") == 0) {
                     mCmd = MC_USER;
                     return CPSNextArgument;
+                }
+                if (strcmp(arg, "reconnect") == 0) {
+                    mCmd = MC_CONNECT;
+                    return CPSComplete;
                 }
             }
             if (mCmd == MC_SERVER && argNo == 1) {
@@ -244,6 +252,10 @@ class MQTTParser: public CommandParser {
             }
             if (mCmd == MC_USER) {
                 settings.setMQTTClient(settings.getMQTTClientID().c_str(), mUser.c_str(), mPassword.c_str());
+                return CESOK;
+            }
+            if (mCmd == MC_CONNECT) {
+                mqttClient.connect();
                 return CESOK;
             }
             return CmdExecStatus::CESInvalidArgument;
@@ -364,59 +376,59 @@ void processKeypadCommand(uint8_t data)
     switch (UARTBuffer[0] & ~CMD_HEADER) {
         case CMD_LIGHT_INTENSITY:
             if (UARTBufferLength >= 2) {
+                Serial.printf("[Kbd] Set light intensity: %hhu\n", UARTBuffer[1]);
                 LEDs.setIntensity(UARTBuffer[1]);
                 UARTBufferLength = 0;
-                Serial.printf("[Kbd] Set light intensity: %hhu\n", UARTBuffer[1]);
             }
             break;
         case CMD_DIMMED_INTENSITY:
             if (UARTBufferLength >= 2) {
+                Serial.printf("[Kbd] Set dimmed intensity: %hhu\n", UARTBuffer[1]);
                 LEDs.setDimmedIntensity(UARTBuffer[1]);
                 UARTBufferLength = 0;
-                Serial.printf("[Kbd] Set dimmed intensity: %hhu\n", UARTBuffer[1]);
             }
             break;
         case CMD_HSV_COLOR:
             if (UARTBufferLength >= 4) {
+                Serial.printf("[Kbd] Set HSV: %hhu %hhu %hhu\n", UARTBuffer[1], UARTBuffer[2], UARTBuffer[3]);
                 LEDs.setHSV(UARTBuffer[1], UARTBuffer[2], UARTBuffer[3]);
                 UARTBufferLength = 0;
-                Serial.printf("[Kbd] Set HSV: %hhu %hhu %hhu\n", UARTBuffer[1], UARTBuffer[2], UARTBuffer[3]);
             }
             break;
         case CMD_LIGHT_MODE:
             if (UARTBufferLength >= 2) {
+                Serial.printf("[Kbd] Enable lamp: %s, LED strip: %s\n", strBool(UARTBuffer[1] & 0x01), strBool(UARTBuffer[1] & 0x02));
                 LEDs.enableLamps(UARTBuffer[1] & 0x01);
                 LEDs.enableLEDStrip(UARTBuffer[1] & 0x02);
                 UARTBufferLength = 0;
-                Serial.printf("[Kbd] Enable lamp: %s, LED strip: %s\n", strBool(UARTBuffer[1] & 0x01), strBool(UARTBuffer[1] & 0x02));
             }
             break;
         case CMD_RGB_MODE:
             if (UARTBufferLength >= 2) {
+                Serial.printf("[Kbd] Set RGB mode: %s\n", strRGBMode((RGBMode) UARTBuffer[1]));
                 LEDs.setRGBMode((RGBMode) UARTBuffer[1]);
                 UARTBufferLength = 0;
-                Serial.printf("[Kbd] Set RGB mode: %s\n", strRGBMode((RGBMode) UARTBuffer[1]));
             }
             break;
         case CMD_SCREEN:
             if (UARTBufferLength >= 2) {
+                Serial.printf("[Kbd] Move Screen: %s\n", strLiftCommand((LiftCommand) UARTBuffer[1]));
                 Projector.moveScreen((LiftCommand) UARTBuffer[1]);
                 UARTBufferLength = 0;
-                Serial.printf("[Kbd] Move Screen: %s\n", strLiftCommand((LiftCommand) UARTBuffer[1]));
             }
             break;
         case CMD_PROJECTOR_MODE:
             if (UARTBufferLength >= 2) {
+                Serial.printf("[Kbd] Set projector mode: %s\n", strProjectorCommand((ProjectorCommand) UARTBuffer[1]));
                 Projector.setMode((ProjectorCommand) UARTBuffer[1]);
                 UARTBufferLength = 0;
-                Serial.printf("[Kbd] Set projector mode: %s\n", strProjectorCommand((ProjectorCommand) UARTBuffer[1]));
             }
             break;
         case CMD_PROJECTOR_LIFT:
             if (UARTBufferLength >= 2) {
+                Serial.printf("[Kbd] Lift projector: %s\n", strLiftCommand((LiftCommand) UARTBuffer[1]));
                 Projector.moveProjector((LiftCommand) UARTBuffer[1]);
                 UARTBufferLength = 0;
-                Serial.printf("[Kbd] Lift projector: %s\n", strLiftCommand((LiftCommand) UARTBuffer[1]));
             }
             break;
         case CMD_REQUEST_STATUS:
@@ -436,9 +448,13 @@ void processKeypadCommand(uint8_t data)
 void checkWiFiConnection()
 {
     if (WiFi.status() != WL_CONNECTED) {
-        Serial.printf("[WiFi] Not connected. Reconnecting ..\n");
+        Serial.printf("[WiFi] Not connected. Reconnecting .. ");
         WiFi.disconnect();
-        WiFi.reconnect();
+        if (WiFi.reconnect()) {
+            Serial.println("successfull.");
+        } else {
+            Serial.println("failed!");
+        }
     }
 }
 

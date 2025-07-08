@@ -49,7 +49,7 @@ class LEDDriver {
 
         void updateLEDs(bool force = false);
 
-        void mqttCallback(const char *key, byte* payload, unsigned int length);
+        void mqttCallback(const char *key, const char* payload, unsigned int length);
 
         void subscribeCallback();
 

@@ -19,7 +19,7 @@
 
 #include "Settings.h"
 
-using MqttTopicCallback = std::function<void(const char *key, byte *payload, unsigned int length)>;
+using MqttTopicCallback = std::function<void(const char *key, const char *payload, unsigned int length)>;
 using MqttSubscribeCallback = std::function<void()>;
 
 const char *strRGBMode(RGBMode mode);
@@ -68,6 +68,8 @@ class MqttClient
                             MqttSubscribeCallback subscribeCallback);
 
         void publish(MqttSubtopic subtopic, const char* key, const char* value, bool subscribe = false);
+
+        void subscribe(MqttSubtopic subtopic, const char* key);
 
         bool connected() { return mMqttClient.connected(); }
 

@@ -174,6 +174,7 @@ void MqttClient::mqttCallback(char *topic, byte *payload, unsigned int length)
     Serial.println();
 
     String stopic(topic);
+    String spayload(payload, length);
 
     if (stopic.startsWith(mTopic)) {
         String subtopic = stopic.substring(mTopic.length());
@@ -182,13 +183,13 @@ void MqttClient::mqttCallback(char *topic, byte *payload, unsigned int length)
         if (subtopic.startsWith(TOPIC_LEDS)) {
             String key = subtopic.substring(strlen(TOPIC_LEDS));
             if (mLEDCallback) {
-                mLEDCallback(key.c_str(), payload, length);
+                mLEDCallback(key.c_str(), spayload.c_str(), length);
             }
         }
         if (subtopic.startsWith(TOPIC_PROJECTOR)) {
             String key = subtopic.substring(strlen(TOPIC_PROJECTOR));
             if (mProjectorCallback) {
-                mProjectorCallback(key.c_str(), payload, length);
+                mProjectorCallback(key.c_str(), spayload.c_str(), length);
             }
         }
     }
@@ -229,10 +230,28 @@ void MqttClient::publish(MqttSubtopic subtopic, const char* key, const char* val
 
     Serial.printf("[MQTT] Publish %s: %s\n", topic.c_str(), value);
 
-    mMqttClient.publish(topic.c_str(), value);
+    mMqttClient.publish(topic.c_str(), value, true);
     if (subscribe) {
         mMqttClient.subscribe(topic.c_str());
     }
+}
+
+void MqttClient::subscribe(MqttSubtopic subtopic, const char* key)
+{
+    String topic = mTopic;
+    switch (subtopic) {
+        case MQS_LEDS:
+            topic += TOPIC_LEDS;
+            break;
+        case MQS_PROJECTOR:
+            topic += TOPIC_PROJECTOR;
+            break;
+    }
+    topic += key;
+
+    Serial.printf("[MQTT] Subscribe %s\n", topic.c_str());
+    
+    mMqttClient.subscribe(topic.c_str());
 }
 
 bool MqttClient::connect()
@@ -240,6 +259,18 @@ bool MqttClient::connect()
     mTopic = mSettings.getMQTTTopic();
     mTopic += "/";
 
+    mMqttClient.disconnect();
+
+    IPAddress mqttAddr;
+    WiFi.hostByName(mSettings.getMQTTServer().c_str(), mqttAddr);
+
+    mMqttClient.setServer(mqttAddr, mSettings.getMQTTPort());
+
+    Serial.printf("[MQTT] Connecting to %s:%d/%s (IP: %s) ..\n", 
+        mSettings.getMQTTServer().c_str(), mSettings.getMQTTPort(), mTopic,
+        mqttAddr.toString().c_str()
+    );
+    
     if (mMqttClient.connect(mSettings.getMQTTClientID().c_str(), 
                             mSettings.getMQTTUsername().c_str(),
                             mSettings.getMQTTPassword().c_str()))

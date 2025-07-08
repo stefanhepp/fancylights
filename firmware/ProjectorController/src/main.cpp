@@ -18,7 +18,7 @@
 static const uint8_t IRQ_BUTTONS = 0;
 
 void sendKeypadStatus() {
-    uint8_t switchStatus = digitalRead(PIN_ENDSTOP);
+    uint8_t switchStatus = digitalRead(PIN_ENDSTOP) ? 0 : 1;
 
     Serial.write(ProjectorOpcode::POP_STATUS);
     Serial.write(switchStatus);

@@ -8,6 +8,9 @@
  * License: GPL v3
  * See 'COPYRIGHT.txt' for copyright and licensing information.
  */
+
+//#define FASTLED_ESP32_I2S
+
 #include "LED.h"
 
 #include <functional>
@@ -77,40 +80,40 @@ void LEDDriver::updateLEDs(bool force) {
     }
 }
 
-void LEDDriver::mqttCallback(const char *key, byte* payload, unsigned int length)
+void LEDDriver::mqttCallback(const char *key, const char* payload, unsigned int length)
 {
     if (length == 0) {
         return;
     }
     if (strcmp(key, TOPIC_LAMPS_ENABLE) == 0) {
         bool val;
-        if (parseBool((char*)payload, val)) {
+        if (parseBool(payload, val)) {
             enableLamps(val, false);
         }
     }
     if (strcmp(key, TOPIC_LEDS_ENABLE) == 0) {
         bool val;
-        if (parseBool((char*)payload, val)) {
+        if (parseBool(payload, val)) {
             enableLEDStrip(val, false);
         }
     }
     if (strcmp(key, TOPIC_INTENSITY) == 0) {
         int val;
-        int result = sscanf((char*)payload, "%d", &val);
+        int result = sscanf(payload, "%d", &val);
         if (result == 1 && val >= 0 && val < 256) {
             setIntensity(val, false);
         }
     }
     if (strcmp(key, TOPIC_DIMMED_INTENSITY) == 0) {
         int val;
-        int result = sscanf((char*)payload, "%d", &val);
+        int result = sscanf(payload, "%d", &val);
         if (result == 1 && val >= 0 && val < 256) {
             setDimmedIntensity(val, false);
         }
     }
     if (strcmp(key, TOPIC_RGBMODE) == 0) {
         RGBMode mode;
-        if (parseRGBMode((char*)payload, mode)) {
+        if (parseRGBMode(payload, mode)) {
             setRGBMode(mode, false);
         }
     }
@@ -122,16 +125,17 @@ void LEDDriver::mqttCallback(const char *key, byte* payload, unsigned int length
             String sb = srgb.substring(5,7);
 
             CRGB rgb;
-            rgb.r = sr.toInt();
-            rgb.g = sg.toInt();
-            rgb.b = sb.toInt();
+            ;
+            rgb.r = strtol(sr.c_str(), 0, 16);
+            rgb.g = strtol(sg.c_str(), 0, 16);
+            rgb.b = strtol(sb.c_str(), 0, 16);
 
             CHSV hsv = rgb2hsv_approximate(rgb);
 
             setHSV(hsv, false);
         } else {
             int r, g, b;
-            int result = sscanf((char*)payload, "rgb:(%d,%d,%d)", &r, &g, &b);
+            int result = sscanf(payload, "rgb(%d, %d, %d)", &r, &g, &b);
             if (result == 3) {
                 CRGB rgb;
                 rgb.r = r;
@@ -147,7 +151,7 @@ void LEDDriver::mqttCallback(const char *key, byte* payload, unsigned int length
     if (strcmp(key, TOPIC_COLOR_HSV) == 0) {
         JsonDocument doc;
 
-        DeserializationError error = deserializeJson(doc, (char*)payload);
+        DeserializationError error = deserializeJson(doc, payload);
 
         if (error) {
             Serial.print("[MQTT] Deserialization failed: ");
@@ -236,6 +240,7 @@ void LEDDriver::setRGBMode(RGBMode mode, bool publish)
 {
     mRGBMode = mode;
     mSettings.setRGBMode(mode);
+    updateIntensity();
     updateLEDs(true);
     if (publish) {
         mMqttClient.publish(MQS_LEDS, TOPIC_RGBMODE, strRGBMode(mRGBMode), true);
@@ -326,5 +331,4 @@ void LEDDriver::loop()
 
         }
     }
-
 }

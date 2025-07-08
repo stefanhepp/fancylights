@@ -21,32 +21,34 @@ HardwareSerial projectorSerial(UART_PROJECTOR);
 const char *TOPIC_PROJECTOR_MODE = "mode";
 const char *TOPIC_PROJECTOR_MOVE = "move";
 const char *TOPIC_SCREEN_MOVE = "screen";
+const char *TOPIC_PROJECTOR_POWER = "power";
+const char *TOPIC_PROJECTOR_SWITCH = "endstop";
 
 ProjectorController::ProjectorController(Settings &settings, MqttClient &mqttClient)
 : mSettings(settings), mMqttClient(mqttClient)
 {
 }
 
-void ProjectorController::mqttCallback(const char *key, byte* payload, unsigned int length)
+void ProjectorController::mqttCallback(const char *key, const char* payload, unsigned int length)
 {
     if (length == 0) {
         return;
     }
     if (strcmp(key, TOPIC_PROJECTOR_MODE) == 0) {
         ProjectorCommand mode;
-        if (parseProjectorCommand((char*)payload, mode)) {
+        if (parseProjectorCommand(payload, mode)) {
             setMode(mode, false);
         }
     }
     if (strcmp(key, TOPIC_PROJECTOR_MOVE) == 0) {
         LiftCommand move;
-        if (parseLiftCommand((char*)payload, move)) {
+        if (parseLiftCommand(payload, move)) {
             moveProjector(move, false);
         }
     }
     if (strcmp(key, TOPIC_SCREEN_MOVE) == 0) {
         LiftCommand move;
-        if (parseLiftCommand((char*)payload, move)) {
+        if (parseLiftCommand(payload, move)) {
             moveScreen(move, false);
         }
     }
@@ -55,8 +57,8 @@ void ProjectorController::mqttCallback(const char *key, byte* payload, unsigned 
 void ProjectorController::subscribeCallback()
 {
     mMqttClient.publish(MQS_PROJECTOR, TOPIC_PROJECTOR_MODE, strProjectorCommand(mMode), true);
-    mMqttClient.publish(MQS_PROJECTOR, TOPIC_PROJECTOR_MOVE, strLiftCommand(LIFT_STOP), true);
-    mMqttClient.publish(MQS_PROJECTOR, TOPIC_SCREEN_MOVE, strLiftCommand(LIFT_STOP), true);
+    mMqttClient.subscribe(MQS_PROJECTOR, TOPIC_PROJECTOR_MOVE);
+    mMqttClient.subscribe(MQS_PROJECTOR, TOPIC_SCREEN_MOVE);
 }
 
 void ProjectorController::setMode(ProjectorCommand mode, bool publish)
@@ -74,10 +76,6 @@ void ProjectorController::setMode(ProjectorCommand mode, bool publish)
 void ProjectorController::moveProjector(LiftCommand direction, bool publish)
 {
 
-    if (publish) {
-        String sDir = strLiftCommand(direction);
-        mMqttClient.publish(MQS_PROJECTOR, TOPIC_PROJECTOR_MOVE, sDir.c_str());
-    }
 }
 
 void ProjectorController::moveScreen(LiftCommand direction, bool publish)
@@ -88,10 +86,6 @@ void ProjectorController::moveScreen(LiftCommand direction, bool publish)
     }
     if (direction == LiftCommand::LIFT_DOWN || direction == LiftCommand::LIFT_STOP) {
         digitalWrite(PIN_SCREEN_DOWN, HIGH);
-    }
-    if (publish) {
-        String sDir = strLiftCommand(direction);
-        mMqttClient.publish(MQS_PROJECTOR, TOPIC_SCREEN_MOVE, sDir.c_str());
     }
 }
 
@@ -114,6 +108,9 @@ void ProjectorController::processSerialData(uint8_t data)
                 if (mStatusCallback) {
                     mStatusCallback(switchState, powerOn);
                 }
+
+                mMqttClient.publish(MQS_PROJECTOR, TOPIC_PROJECTOR_POWER, strBool(powerOn));
+                mMqttClient.publish(MQS_PROJECTOR, TOPIC_PROJECTOR_SWITCH, strBool(switchState));
 
                 // finish the command
                 mBufferSize = 0;
@@ -159,8 +156,6 @@ void ProjectorController::loop()
         if (mCntPulse == 0) {
             digitalWrite(PIN_SCREEN_UP, LOW);
             digitalWrite(PIN_SCREEN_DOWN, LOW);
-
-            mMqttClient.publish(MQS_PROJECTOR, TOPIC_SCREEN_MOVE, strLiftCommand(LIFT_STOP));
         }
     }
 

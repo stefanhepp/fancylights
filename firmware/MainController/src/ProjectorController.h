@@ -37,7 +37,7 @@ class ProjectorController {
 
         void processSerialData(uint8_t data);
 
-        void mqttCallback(const char *key, byte* payload, unsigned int length);
+        void mqttCallback(const char *key, const char* payload, unsigned int length);
 
         void subscribeCallback();
 
