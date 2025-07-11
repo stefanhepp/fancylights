@@ -284,22 +284,15 @@ class LEDParser: public CommandParser {
 
         virtual CmdParseStatus parseNextArgument(int argNo, const char* arg) {
             if (argNo == 0) {
-                if (strcmp(arg, "on") == 0) {
+                if (parseRGBMode(arg, mMode)) {
                     mCommand = CMD_RGB_MODE;
                     mLEDEnable = true;
-                    mMode = RGB_ON;
                     return CPSComplete;
                 }
                 if (strcmp(arg, "off") == 0) {
                     mCommand = CMD_RGB_MODE;
                     mLEDEnable = false;
                     mMode = RGB_ON;
-                    return CPSComplete;
-                }
-                if (strcmp(arg, "cycle") == 0) {
-                    mCommand = CMD_RGB_MODE;
-                    mLEDEnable = true;
-                    mMode = RGB_CYCLE;
                     return CPSComplete;
                 }
                 if (strcmp(arg, "color") == 0) {
@@ -330,7 +323,9 @@ class LEDParser: public CommandParser {
             if (mCommand == CMD_RGB_MODE) {
                 LEDs.enableLEDStrip(mLEDEnable);
                 LEDs.enableLamps(mLEDEnable);
-                LEDs.setRGBMode(mMode);
+                if (mLEDEnable) {
+                    LEDs.setRGBMode(mMode);
+                }
                 sendKeypadStatus();
                 return CmdExecStatus::CESOK;
             }
@@ -420,7 +415,7 @@ void processKeypadCommand(uint8_t data)
         case CMD_PROJECTOR_MODE:
             if (UARTBufferLength >= 2) {
                 Serial.printf("[Kbd] Set projector mode: %s\n", strProjectorCommand((ProjectorCommand) UARTBuffer[1]));
-                Projector.setMode((ProjectorCommand) UARTBuffer[1]);
+                Projector.sendMode((ProjectorCommand) UARTBuffer[1]);
                 UARTBufferLength = 0;
             }
             break;

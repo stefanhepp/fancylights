@@ -32,8 +32,6 @@ static const uint8_t KEYPAD_I2C_ADDR = 0x60;
 
 static const int UART_SPEED_CONTROLLER = 9600; // 38400;
 
-static const int UART_SPEED_SOFTWARE = 9600;
-
 static const int UART_SPEED_PROJECTOR = 9600;
 
 /**
@@ -82,15 +80,15 @@ enum CommandOpcode : uint8_t {
 
 enum ProjectorOpcode : uint8_t {
     // Request status; return value = <..|1:Power On|0:Switch>
-    POP_STATUS            = 0x01,
+    POP_STATUS            = 0xA1,
     // Request to lock when endstop is reached
-    POP_LOCK              = 0x02,
+    POP_LOCK              = 0xA2,
     // Request to unlock
-    POP_UNLOCK            = 0x03,
-    // Power projector on/off
-    POP_POWER             = 0x04,
-    // Projector set mode
-    POP_MODE              = 0x05
+    POP_UNLOCK            = 0xA3,
+    // ACK a lock/unlock request after completion
+    POP_ACK               = 0xA4,
+    // Projector set mode, value = <ProjectorCommand>
+    POP_MODE              = 0xA5
 };
 
 enum RGBMode : uint8_t {
@@ -101,7 +99,19 @@ enum RGBMode : uint8_t {
     // RGB fire flicker
     RGB_FIRE    = 0x02,
     // RGB low light
-    RGB_DIMMED  = 0x03
+    RGB_DIMMED  = 0x03,
+    // RGB spin
+    RGB_SPIN    = 0x04,
+    // RGB scan
+    RGB_SCAN    = 0x05,
+    // RGB juggle
+    RGB_JUGGLE  = 0x06,
+    // RGB BPM
+    RGB_BPM     = 0x07,
+    // RGB rainbow
+    RGB_RAINBOW = 0x08,
+    // RGB water 
+    RGB_WATER   = 0x09
 };
 
 enum LiftCommand : uint8_t {

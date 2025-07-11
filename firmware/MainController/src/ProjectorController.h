@@ -48,11 +48,11 @@ class ProjectorController {
 
         ProjectorCommand mode() const { return mMode; }
 
-        void setMode(ProjectorCommand mode, bool publish = true);
+        void sendMode(ProjectorCommand mode);
 
-        void moveProjector(LiftCommand direction, bool publish = true);
+        void moveProjector(LiftCommand direction);
 
-        void moveScreen(LiftCommand direction, bool publish = true);
+        void moveScreen(LiftCommand direction);
 
         void requestStatus();
 

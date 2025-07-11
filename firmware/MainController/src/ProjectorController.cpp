@@ -37,48 +37,45 @@ void ProjectorController::mqttCallback(const char *key, const char* payload, uns
     if (strcmp(key, TOPIC_PROJECTOR_MODE) == 0) {
         ProjectorCommand mode;
         if (parseProjectorCommand(payload, mode)) {
-            setMode(mode, false);
+            sendMode(mode);
         }
     }
     if (strcmp(key, TOPIC_PROJECTOR_MOVE) == 0) {
         LiftCommand move;
         if (parseLiftCommand(payload, move)) {
-            moveProjector(move, false);
+            moveProjector(move);
         }
     }
     if (strcmp(key, TOPIC_SCREEN_MOVE) == 0) {
         LiftCommand move;
         if (parseLiftCommand(payload, move)) {
-            moveScreen(move, false);
+            moveScreen(move);
         }
     }
 }
 
 void ProjectorController::subscribeCallback()
 {
-    mMqttClient.publish(MQS_PROJECTOR, TOPIC_PROJECTOR_MODE, strProjectorCommand(mMode), true);
+    mMqttClient.subscribe(MQS_PROJECTOR, TOPIC_PROJECTOR_MODE);
     mMqttClient.subscribe(MQS_PROJECTOR, TOPIC_PROJECTOR_MOVE);
     mMqttClient.subscribe(MQS_PROJECTOR, TOPIC_SCREEN_MOVE);
 }
 
-void ProjectorController::setMode(ProjectorCommand mode, bool publish)
+void ProjectorController::sendMode(ProjectorCommand mode)
 {
-    // TODO send command via SW UART to projector
-
     mMode = mode;
 
-    if (publish) {
-        String sMode = strProjectorCommand(mode);
-        mMqttClient.publish(MQS_PROJECTOR, TOPIC_PROJECTOR_MODE, sMode.c_str());
-    }
+    // send command via SW UART to projector
+    projectorSerial.write(ProjectorOpcode::POP_MODE);
+    projectorSerial.write(mode);
 }
 
-void ProjectorController::moveProjector(LiftCommand direction, bool publish)
+void ProjectorController::moveProjector(LiftCommand direction)
 {
 
 }
 
-void ProjectorController::moveScreen(LiftCommand direction, bool publish)
+void ProjectorController::moveScreen(LiftCommand direction)
 {
     mCntPulse = 50;
     if (direction == LiftCommand::LIFT_UP || direction == LiftCommand::LIFT_STOP) {
@@ -128,7 +125,7 @@ void ProjectorController::begin()
 {
     using namespace std::placeholders;
 
-    projectorSerial.begin(UART_SPEED_PROJECTOR, SERIAL_8N1, PIN_PR_RXD, PIN_PR_TXD);
+    projectorSerial.begin(UART_SPEED_CONTROLLER, SERIAL_8N1, PIN_PR_RXD, PIN_PR_TXD);
 
     pinMode(PIN_SCREEN_UP, OUTPUT);
     pinMode(PIN_SCREEN_DOWN, OUTPUT);

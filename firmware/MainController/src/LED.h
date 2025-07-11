@@ -12,6 +12,7 @@
 
 #include <inttypes.h>
 
+#include <FastLED.h>
 #include <chsv.h>
 #include <crgb.h>
 
@@ -27,8 +28,60 @@ static const uint8_t LED_LAMP2 = 1;
 
 static const uint8_t NUM_LEDS = 60 * 4;
 
+static const uint8_t NUM_LEDS_CENTER = 10;
+
 class LEDDriver {
     private:
+        enum LEDAnimation {
+            // No next animation scheduled
+            ANIM_NONE,
+            // Turn power off
+            ANIM_DISABLED,
+            // All LEDS same color, no animation
+            ANIM_ON,
+            // All LEDs same color, cycle color
+            ANIM_COLORCYCLE,
+            // Transition: Fade in; param = size of bar
+            ANIM_FADE_IN,
+            // Transition: Fade out; param = size of bar
+            ANIM_FADE_OUT,
+            // Show a bar; param = size of bar (number of leds)
+            ANIM_BAR,
+            // Show a single dot; param = position (pixel number)
+            ANIM_CIRCLE,
+            // Show a dot on both sides; param = position (pixel)
+            ANIM_SCAN,
+            // Fire animation; param = frame
+            ANIM_FIRE,
+            // Juggle animation
+            ANIM_JUGGLE,
+            // BPM animation
+            ANIM_BPM,
+            // rainbow animation
+            ANIM_RAINBOW,
+            // water animation
+            ANIM_WATER
+        };
+
+        enum LEDEffect {
+            // fill all with same color
+            EF_FILLED,
+            // show a bar; param = size of bar
+            EF_BAR,
+            // show a single dot; param = position
+            EF_DOT,
+            // Show fire animation
+            EF_FIRE,
+            // Juggle animation; param = number of dots
+            EF_JUGGLE,
+            // BPM animation; param = 
+            EF_BPM,
+            // fill rainbow 
+            EF_RAINBOW,
+            // water animation
+            EF_WATER
+        };
+
         Settings   &mSettings;
         MqttClient &mMqttClient;
 
@@ -45,9 +98,39 @@ class LEDDriver {
 
         RGBMode mRGBMode = RGB_ON;
 
+        LEDAnimation  mAnimation = ANIM_NONE;
+        LEDAnimation  mNextAnimation = ANIM_NONE;
+        bool          mAnimationDirection;
+
+        LEDEffect     mEffect;
+        int           mEffectParam;
+        // Mirror the effect on both sides, otherwise use the full length
+        bool          mEffectMirrored = false;
+        CRGBPalette16 mEffectPalette;
+        // BPM value for some effects
+        int           mEffectBPM = 13;
+        // Speed to fade out old pixels
+        int           mFadeSpeed = 20;
+        // Add some glitter effect; 0 = off, 255: full
+        int           mGlitterChance = 0;
+
         void updateIntensity();
 
-        void updateLEDs(bool force = false);
+        void updateLEDs();
+
+        void updateAnimation();
+
+        LEDAnimation getAnimation(RGBMode mode);
+
+        void setNextAnimation(LEDAnimation animation);
+
+        void startAnimation(LEDAnimation animation);
+
+        void startFading(bool fadeOut, LEDAnimation nextAnimation);
+
+        bool isFading() const { return mAnimation == ANIM_FADE_IN || mAnimation == ANIM_FADE_OUT; }
+
+        bool isAnimationFinished() const;
 
         void mqttCallback(const char *key, const char* payload, unsigned int length);
 

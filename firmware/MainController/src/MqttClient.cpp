@@ -24,16 +24,24 @@ const char *strRGBMode(RGBMode mode)
     switch (mode) {
         case RGB_ON:
             return "on";
-            break;
         case RGB_CYCLE:
             return "cycle";
-            break;
         case RGB_FIRE:
             return "fire";
-            break;
         case RGB_DIMMED:
             return "dimmed";
-            break;
+        case RGB_SPIN:
+            return "spin";
+        case RGB_SCAN:
+            return "scan";
+        case RGB_JUGGLE:
+            return "juggle";
+        case RGB_BPM:
+            return "bpm";
+        case RGB_RAINBOW:
+            return "rainbow";
+        case RGB_WATER:
+            return "water";
     }
     return "";
 }
@@ -97,6 +105,30 @@ bool parseRGBMode(const char *str, RGBMode &mode)
     }
     if (strcmp(str, "dimmed") == 0) {
         mode = RGB_DIMMED;
+        return true;
+    }
+    if (strcmp(str, "spin") == 0) {
+        mode = RGB_SPIN;
+        return true;
+    }
+    if (strcmp(str, "scan") == 0) {
+        mode = RGB_SCAN;
+        return true;
+    }
+    if (strcmp(str, "juggle") == 0) {
+        mode = RGB_JUGGLE;
+        return true;
+    }
+    if (strcmp(str, "bpm") == 0) {
+        mode = RGB_BPM;
+        return true;
+    }
+    if (strcmp(str, "rainbow") == 0) {
+        mode = RGB_RAINBOW;
+        return true;
+    }
+    if (strcmp(str, "water") == 0) {
+        mode = RGB_RAINBOW;
         return true;
     }
     return false;
