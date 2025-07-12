@@ -26,9 +26,9 @@ static const uint8_t NUM_LAMPS = 2;
 static const uint8_t LED_LAMP1 = 0;
 static const uint8_t LED_LAMP2 = 1;
 
-static const uint8_t NUM_LEDS = 60 * 4;
+static const uint8_t NUM_LEDS = 108*2+8;
 
-static const uint8_t NUM_LEDS_CENTER = 10;
+static const uint8_t NUM_LEDS_CENTER = 8;
 
 class LEDDriver {
     private:
@@ -104,6 +104,7 @@ class LEDDriver {
 
         LEDEffect     mEffect;
         int           mEffectParam;
+        int           mEffectCount;
         // Mirror the effect on both sides, otherwise use the full length
         bool          mEffectMirrored = false;
         CRGBPalette16 mEffectPalette;
@@ -114,7 +115,7 @@ class LEDDriver {
         // Add some glitter effect; 0 = off, 255: full
         int           mGlitterChance = 0;
 
-        void updateIntensity();
+        void updateLamps();
 
         void updateLEDs();
 

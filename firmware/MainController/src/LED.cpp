@@ -40,7 +40,7 @@ LEDDriver::LEDDriver(Settings &settings, MqttClient &mqttClient)
     }
 }
 
-void LEDDriver::updateIntensity()
+void LEDDriver::updateLamps()
 {
     if (mEnableLamps) {
         uint8_t intensity = mRGBMode == RGBMode::RGB_DIMMED ? mDimmedIntensity : mLightIntensity;
@@ -52,26 +52,23 @@ void LEDDriver::updateIntensity()
         mIntensity[LED_LAMP2] = 0;
     }
 
-    if (mEnableLEDStrip) {
-        uint8_t intensity = mRGBMode == RGBMode::RGB_DIMMED ? mDimmedIntensity : 255;
-        
-        FastLED.setBrightness(intensity);
-        FastLED.show();
-    }
-
     analogWrite(PIN_LAMP1, 255 - mIntensity[LED_LAMP1]);
     analogWrite(PIN_LAMP2, 255 - mIntensity[LED_LAMP2]);
 }
 
 void LEDDriver::updateLEDs() {
+    CHSV fullColor = mHSV;
     CRGB rgb;
-    hsv2rgb_rainbow(mHSV, rgb);
 
     CHSV hsv2;
     CRGB rgb2;
+
     int i;
 
-    if (mEnableLEDStrip) {
+    fullColor.value = 255;
+    hsv2rgb_rainbow(fullColor, rgb);
+
+    if (mAnimation != ANIM_NONE) {
         switch (mEffect) {
             case EF_FILLED:
                 fill_solid(mLEDs, NUM_LEDS, rgb);
@@ -98,9 +95,12 @@ void LEDDriver::updateLEDs() {
                 break;
             case EF_DOT:
                 fadeToBlackBy(mLEDs, NUM_LEDS, mFadeSpeed);
-                mLEDs[mEffectParam] = mHSV;
-                if (mEffectMirrored) {
-                    mLEDs[NUM_LEDS - 1 - mEffectParam] = mHSV;
+                for (i = 0; i < mEffectCount; i++) {
+                    int idx = mEffectParam + i*(NUM_LEDS/mEffectCount);
+                    mLEDs[idx] = mHSV;
+                    if (mEffectMirrored) {
+                        mLEDs[NUM_LEDS - 1 - idx] = mHSV;
+                    }
                 }
                 break;
             case EF_FIRE:
@@ -108,12 +108,18 @@ void LEDDriver::updateLEDs() {
             case EF_JUGGLE:
                 // colored dots, weaving in and out of sync with each other
                 fadeToBlackBy(mLEDs, NUM_LEDS, mFadeSpeed);
-                for (i = 0; i < mEffectParam; i++) {
-                    mLEDs[beatsin16(i+mEffectParam-1, 0, NUM_LEDS-1)] |= rgb;
+                for (i = 0; i < mEffectCount; i++) {
+                    rgb2 = ColorFromPalette(mEffectPalette, mHSV.hue+(i*127)/mEffectCount, 255);
+                    int idx = beatsin16(i+mEffectParam, 0, mEffectMirrored ? NUM_LEDS/2 : NUM_LEDS-1);
+                    mLEDs[idx] |= rgb2;
+                    if (mEffectMirrored) {
+                        mLEDs[NUM_LEDS - 1 - idx] |= rgb2;
+                    }
                 }
+                break;
             case EF_BPM:
                 fadeToBlackBy(mLEDs, NUM_LEDS, mFadeSpeed);
-                for (i = 0; i < (NUM_LEDS-NUM_LEDS_CENTER)/2; i++) {
+                for (i = 0; i < NUM_LEDS-1; i++) {
                     mLEDs[i] = ColorFromPalette(mEffectPalette, mHSV.hue + (i*2), mEffectParam - mHSV.hue + (i*10));
                 }
                 break;
@@ -131,6 +137,11 @@ void LEDDriver::updateLEDs() {
             }
         }
 
+        if (mRGBMode == RGB_DIMMED) {
+            FastLED.setBrightness((((int)mHSV.value) * mDimmedIntensity)/ 255);
+        } else {
+            FastLED.setBrightness(mHSV.value);
+        }
         FastLED.show();
     }
 }
@@ -138,33 +149,32 @@ void LEDDriver::updateLEDs() {
 void LEDDriver::updateAnimation()
 {
     if (isAnimationFinished() && mNextAnimation != ANIM_NONE) {
-        mAnimation = mNextAnimation;
+        startAnimation(mNextAnimation);        
         mNextAnimation = ANIM_NONE;
-        mEffectParam = 0;
     }
 
     switch (mAnimation) {
         case ANIM_NONE:
         case ANIM_ON:
         case ANIM_DISABLED:
-        case ANIM_JUGGLE:
             break;
+        case ANIM_JUGGLE:
         case ANIM_COLORCYCLE:
         case ANIM_RAINBOW:
             // Color cycle, wrap around at 255
             mHSV[0]++;
             break;
         case ANIM_FADE_IN:
-            mEffectParam++;
+            mEffectParam += 3;
             break;
         case ANIM_FADE_OUT:
-            mEffectParam--;
+            mEffectParam -= 4;
             break;
         case ANIM_CIRCLE:
-            mEffectParam = (mEffectParam + 1) % NUM_LEDS;
+            mEffectParam = (mEffectParam + 1) % (NUM_LEDS / 2);
             break;
         case ANIM_SCAN:
-            mEffectParam = beatsin16(mEffectBPM, 0, (NUM_LEDS-NUM_LEDS_CENTER)/2 );
+            mEffectParam = beatsin16(mEffectBPM, 0, (NUM_LEDS-NUM_LEDS_CENTER)/2 - 1);
             break;
         case ANIM_FIRE:
         case ANIM_WATER:
@@ -188,7 +198,7 @@ void LEDDriver::startAnimation(LEDAnimation animation)
 
     mAnimation = animation;
 
-    mEffectParam = 0;
+    mEffectCount = 1;
     mEffectMirrored = false;
     mGlitterChance = 0;
 
@@ -196,7 +206,7 @@ void LEDDriver::startAnimation(LEDAnimation animation)
     switch (mAnimation) {
         case ANIM_DISABLED:
             // Disable power and turn off
-            digitalWrite(PIN_RGB_PWR, HIGH);
+            digitalWrite(PIN_RGB_PWR, LOW);
             mAnimation = ANIM_NONE;
             // fallthrough..
         case ANIM_NONE:
@@ -205,23 +215,40 @@ void LEDDriver::startAnimation(LEDAnimation animation)
             mEffect = EF_FILLED;
             break;
         case ANIM_FADE_IN:
+            mEffect = EF_BAR;
+            if (!isFading()) {
+                mEffectParam = 0;
+            }
+            mEffectMirrored = true;
+            break;
         case ANIM_FADE_OUT:
             mEffect = EF_BAR;
+            if (!isFading()) {
+                mEffectParam = NUM_LEDS / 2;
+            }
+            mEffectMirrored = true;
             break;
         case ANIM_CIRCLE:
             mEffect = EF_DOT;
+            mEffectCount = 2;
+            mEffectMirrored = false;
             break;
         case ANIM_SCAN:
             mEffect = EF_DOT;
+            mEffectCount = 1;
             mEffectMirrored = true;
             break;
         case ANIM_FIRE:
             mEffect = EF_BPM;
             mEffectPalette = HeatColors_p;
+            mGlitterChance = 100;
             break;
         case ANIM_JUGGLE:
             mEffect = EF_JUGGLE;
-            mEffectParam = 8;
+            mEffectPalette = PartyColors_p;
+            mEffectCount = 5;
+            mEffectParam = 6;
+            mEffectMirrored = false;
             break;
         case ANIM_BPM:
             mEffect = EF_BPM;
@@ -234,20 +261,15 @@ void LEDDriver::startAnimation(LEDAnimation animation)
         case ANIM_WATER:
             mEffect = EF_BPM;
             mEffectPalette = OceanColors_p;
+            mGlitterChance = 30;
             break;
     }
 }
 
 void LEDDriver::startFading(bool fadeOut, LEDAnimation nextAnimation)
 {
-    if (!isFading()) {
-        mEffectParam = fadeOut ? NUM_LEDS / 2 : 0;
-    }
-    mAnimation = fadeOut ? ANIM_FADE_OUT : ANIM_FADE_IN;
-    mEffect = EF_BAR;
-    mEffectMirrored = true;
-    mGlitterChance = 0;
-    mNextAnimation = nextAnimation;
+    startAnimation( fadeOut ? ANIM_FADE_OUT : ANIM_FADE_IN );
+    setNextAnimation( nextAnimation );
 }
 
 bool LEDDriver::isAnimationFinished() const
@@ -426,9 +448,12 @@ void LEDDriver::publishColor(bool subscribe) {
 
 void LEDDriver::enableLamps(bool enabled, bool publish)
 {
+    if (mEnableLamps == enabled) {
+        return;
+    }
     mEnableLamps = enabled;
     mSettings.setLampEnabled(enabled);
-    updateIntensity();
+    updateLamps();
     if (publish) {
         mMqttClient.publish(MQS_LEDS, TOPIC_LAMPS_ENABLE, strBool(mEnableLamps), true);
     }
@@ -436,6 +461,9 @@ void LEDDriver::enableLamps(bool enabled, bool publish)
 
 void LEDDriver::enableLEDStrip(bool enabled, bool publish)
 {
+    if (mEnableLEDStrip == enabled) {
+        return;
+    }
     mEnableLEDStrip = enabled;
     mSettings.setLEDStripEnabled(enabled);
 
@@ -447,7 +475,7 @@ void LEDDriver::enableLEDStrip(bool enabled, bool publish)
         startFading(true, ANIM_DISABLED);
     }
 
-    updateIntensity();
+    updateLamps();
 
     if (publish) {
         mMqttClient.publish(MQS_LEDS, TOPIC_LEDS_ENABLE, strBool(mEnableLEDStrip), true);
@@ -456,10 +484,13 @@ void LEDDriver::enableLEDStrip(bool enabled, bool publish)
 
 void LEDDriver::setRGBMode(RGBMode mode, bool publish)
 {
+    if (mRGBMode == mode) {
+        return;
+    }
     mRGBMode = mode;
     mSettings.setRGBMode(mode);
     setNextAnimation( getAnimation(mode) );
-    updateIntensity();
+    updateLamps();
     
     if (publish) {
         mMqttClient.publish(MQS_LEDS, TOPIC_RGBMODE, strRGBMode(mRGBMode), true);
@@ -468,9 +499,12 @@ void LEDDriver::setRGBMode(RGBMode mode, bool publish)
 
 void LEDDriver::setIntensity(uint8_t value, bool publish)
 {
+    if (mLightIntensity == value) {
+        return;
+    }
     mLightIntensity = value;
     mSettings.setIntensity(value);
-    updateIntensity();
+    updateLamps();
 
     if (publish) {
         String sIntensity(mLightIntensity);
@@ -480,9 +514,12 @@ void LEDDriver::setIntensity(uint8_t value, bool publish)
 
 void LEDDriver::setDimmedIntensity(uint8_t value, bool publish)
 {
+    if (mDimmedIntensity == value) {
+        return;
+    }
     mDimmedIntensity = value;
     mSettings.setDimmedIntensity(value);
-    updateIntensity();
+    updateLamps();
 
     if (publish) {
         String sDimmedIntensity(mDimmedIntensity);
@@ -497,6 +534,9 @@ void LEDDriver::setHSV(CHSV hsv, bool publish)
 
 void LEDDriver::setHSV(uint8_t hue, uint8_t saturation, uint8_t value, bool publish)
 {
+    if (mHSV[0] == hue && mHSV[1] == saturation && mHSV[2] == value) {
+        return;
+    }
     mHSV.setHSV(hue, saturation, value);
     mSettings.setHSV(hue, saturation, value);
     updateLEDs();
@@ -515,10 +555,10 @@ void LEDDriver::begin()
     pinMode(PIN_RGB_DATA, OUTPUT);
     pinMode(PIN_RGB_PWR, OUTPUT);
 
-    mEnableLamps = mSettings.isLampEnabled();
-    mEnableLEDStrip = mSettings.isLEDStripEnabled();
+    digitalWrite(PIN_RGB_PWR, LOW);
 
-    digitalWrite(PIN_RGB_PWR, mEnableLEDStrip ? HIGH : LOW);
+    FastLED.addLeds<WS2815, PIN_RGB_DATA, GRB>(mLEDs, NUM_LEDS).setCorrection( TypicalLEDStrip );
+    FastLED.setDither(BINARY_DITHER);
 
     mLightIntensity = mSettings.intensity();
     mDimmedIntensity = mSettings.dimmedIntensity();
@@ -527,13 +567,10 @@ void LEDDriver::begin()
 
     mHSV = mSettings.getHSV();
 
-    if (mEnableLEDStrip) {
-        startFading(false, getAnimation(mRGBMode));
-    }
+    enableLamps( mSettings.isLampEnabled(), false );
+    enableLEDStrip( mSettings.isLEDStripEnabled(), false );
 
-    FastLED.addLeds<WS2815, PIN_RGB_DATA, GRB>(mLEDs, NUM_LEDS).setCorrection( TypicalLEDStrip );
-
-    updateIntensity();
+    updateLamps();
     updateLEDs();
 
     auto callback = std::bind(&LEDDriver::mqttCallback, this, _1, _2, _3);

@@ -273,7 +273,7 @@ class LEDParser: public CommandParser {
         LEDParser() {}
 
         virtual void printArguments() {
-            Serial.print("on|off|cycle|color <h> <s> <v>");
+            Serial.print("on|off|cycle|spin|scan|fire|water|rainbow|bpm|color <h> <s> <v>");
         }
 
         virtual CmdParseStatus startCommand(const char* cmd) {

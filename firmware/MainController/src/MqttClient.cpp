@@ -128,7 +128,7 @@ bool parseRGBMode(const char *str, RGBMode &mode)
         return true;
     }
     if (strcmp(str, "water") == 0) {
-        mode = RGB_RAINBOW;
+        mode = RGB_WATER;
         return true;
     }
     return false;
@@ -282,7 +282,7 @@ void MqttClient::subscribe(MqttSubtopic subtopic, const char* key)
     topic += key;
 
     Serial.printf("[MQTT] Subscribe %s\n", topic.c_str());
-    
+
     mMqttClient.subscribe(topic.c_str());
 }
 
