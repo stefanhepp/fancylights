@@ -338,6 +338,35 @@ class LEDParser: public CommandParser {
         }
 };
 
+class ScreenParser: public CommandParser {
+    private:
+        LiftCommand mCmd;
+
+    public:
+        ScreenParser() {}
+
+        virtual void printArguments() {
+            Serial.print("up|down|stop");
+        }
+
+        virtual CmdParseStatus startCommand(const char* cmd) {
+            return CPSNextArgument;
+        }
+
+        virtual CmdParseStatus parseNextArgument(int argNo, const char* arg) {
+            if (parseLiftCommand(arg, mCmd)) {
+                return CPSComplete;
+            }
+            return CPSInvalidArgument;
+        }
+
+        virtual CmdExecStatus completeCommand(bool expectCommand) {
+            Projector.moveScreen(mCmd);
+            return CmdExecStatus::CESOK;
+        }
+};
+
+
 void onProjectorStatus(bool switchState, bool powerOn) {
     CntStatusTimeout = 0;
 
@@ -469,6 +498,7 @@ void setup() {
     cmdline.addCommand("led", new LEDParser());
     cmdline.addCommand("wifi", new WiFiParser());
     cmdline.addCommand("mqtt", new MQTTParser());
+    cmdline.addCommand("screen", new ScreenParser());
 
     LEDs.begin();
 

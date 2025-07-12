@@ -12,6 +12,9 @@
 
 #include <functional>
 
+// for EVERY_N_MILLIS macro
+#include <FastLED.h>
+
 #include <commands.h>
 
 #include "config.h"
@@ -77,7 +80,7 @@ void ProjectorController::moveProjector(LiftCommand direction)
 
 void ProjectorController::moveScreen(LiftCommand direction)
 {
-    mCntPulse = 50;
+    mCntPulse = 5;
     if (direction == LiftCommand::LIFT_UP || direction == LiftCommand::LIFT_STOP) {
         digitalWrite(PIN_SCREEN_UP, HIGH);
     }
@@ -148,18 +151,20 @@ void ProjectorController::begin()
 
 void ProjectorController::loop()
 {
-    if (mCntPulse > 0) {
-        mCntPulse--;
-        if (mCntPulse == 0) {
-            digitalWrite(PIN_SCREEN_UP, LOW);
-            digitalWrite(PIN_SCREEN_DOWN, LOW);
-        }
-    }
-
     // Process UART response
     while (projectorSerial.available()) {
         char data = projectorSerial.read();
 
         processSerialData(data);
+    }
+
+    EVERY_N_MILLISECONDS( 100 ) {
+        if (mCntPulse > 0) {
+            mCntPulse--;
+            if (mCntPulse == 0) {
+                digitalWrite(PIN_SCREEN_UP, LOW);
+                digitalWrite(PIN_SCREEN_DOWN, LOW);
+            }
+        }
     }
 }
