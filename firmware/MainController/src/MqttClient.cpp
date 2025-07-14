@@ -51,19 +51,14 @@ const char *strProjectorCommand(ProjectorCommand cmd)
     switch (cmd) {
         case PROJECTOR_OFF:
             return "off";
-            break;
         case PROJECTOR_ON:
             return "on";
-            break;
         case PROJECTOR_NORMAL:
             return "normal";
-            break;
         case PROJECTOR_3D:
             return "3D";
-            break;
         case PROJECTOR_VR:
             return "VR";
-            break;
     }
     return "";
 }
@@ -73,13 +68,10 @@ const char *strLiftCommand(LiftCommand cmd)
     switch (cmd) {
         case LIFT_UP:
             return "up";
-            break;
         case LIFT_DOWN:
             return "down";
-            break;
         case LIFT_STOP:
             return "stop";
-            break;
     }
     return "";
 }
