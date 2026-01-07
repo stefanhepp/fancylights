@@ -36,8 +36,34 @@ static const int UART_BUFFER_SIZE = 16;
 static uint8_t UARTBuffer[UART_BUFFER_SIZE];
 static uint8_t UARTBufferLength = 0;
 
+// Value 0 means no timeout running, 1 means ready to send, >1 means countdown running
 uint8_t CntStatusTimeout = 0;
 
+/**
+ * Start a timeout to send a status reply to the keypad
+ */
+void startStatusTimeout() {
+    CntStatusTimeout = 20;
+}
+
+/**
+ * Indicate that the status is ready to be sent to the keypad
+ */
+void statusReady() {
+    CntStatusTimeout = 1;
+}
+
+bool checkStatusTimeout() {
+    if (CntStatusTimeout > 0) {
+        CntStatusTimeout--;
+        if (CntStatusTimeout == 0) {
+            // Timeout reached, send status
+            return true;
+        }
+    }
+    // no timer running or not yet reached
+    return false;
+}
 
 void sendKeypadStatus();
 
@@ -326,12 +352,10 @@ class LEDParser: public CommandParser {
                 if (mLEDEnable) {
                     LEDs.setRGBMode(mMode);
                 }
-                sendKeypadStatus();
                 return CmdExecStatus::CESOK;
             }
             if (mCommand == CMD_HSV_COLOR) {
                 LEDs.setHSV(mColor.h, mColor.s, mColor.v);
-                sendKeypadStatus();
                 return CmdExecStatus::CESOK;
             }
             return CmdExecStatus::CESInvalidArgument;
@@ -367,12 +391,19 @@ class ScreenParser: public CommandParser {
 };
 
 
-void onProjectorStatus(bool switchState, bool powerOn) {
-    CntStatusTimeout = 0;
+void onProjectorStatus(bool switchState, bool powerOn, bool hasPowerStatus) {
 
-    Serial.printf("[Projector] Status: Power %s, Switch %s\n", strBool(powerOn), strBool(switchState));
+    Serial.printf("[Projector] Status: Power %s, Switch %s\n", hasPowerStatus ? strBool(powerOn) : "-", 
+                                                               strBool(switchState)
+                                                            );
+
+    // Send a status update to the keypad with the received status
+    statusReady();
 }
 
+/**
+ * Send the current settings to the keypad controller.
+ */
 void sendKeypadStatus()
 {
     keypadSerial.write(CMD_HEADER | CMD_READ_STATUS);
@@ -458,7 +489,7 @@ void processKeypadCommand(uint8_t data)
         case CMD_REQUEST_STATUS:
             if (UARTBufferLength >= 2) {
                 Projector.requestStatus();
-                CntStatusTimeout = 10;
+                startStatusTimeout();
                 UARTBufferLength = 0;
             }
             break;
@@ -523,17 +554,22 @@ void loop() {
         processKeypadCommand(data);
     }
 
-    if (CntStatusTimeout > 0) {
-        CntStatusTimeout--;
-        if (CntStatusTimeout == 0) {
-            sendKeypadStatus();
-        }
-    }
-
     cmdline.loop();
     mqttClient.loop();
     LEDs.loop();
     Projector.loop();
+
+    EVERY_N_MILLISECONDS( 10 ) {
+        // Check if we need to send status to keypad
+        bool timeout = checkStatusTimeout();
+        bool changed = settings.hasChanged();
+        
+        if (timeout || changed) {
+            sendKeypadStatus();
+        }
+
+        settings.clearChanged();
+    }
 
     EVERY_N_SECONDS( 20 ) {
         checkWiFiConnection();

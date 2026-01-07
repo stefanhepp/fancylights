@@ -40,7 +40,7 @@ void ProjectorController::mqttCallback(const char *key, const char* payload, uns
     if (strcmp(key, TOPIC_PROJECTOR_MODE) == 0) {
         ProjectorCommand mode;
         if (parseProjectorCommand(payload, mode)) {
-            sendMode(mode);
+            sendMode(mode, false);
         }
     }
     if (strcmp(key, TOPIC_PROJECTOR_MOVE) == 0) {
@@ -64,13 +64,17 @@ void ProjectorController::subscribeCallback()
     mMqttClient.subscribe(MQS_PROJECTOR, TOPIC_SCREEN_MOVE);
 }
 
-void ProjectorController::sendMode(ProjectorCommand mode)
+void ProjectorController::sendMode(ProjectorCommand mode, bool publish)
 {
     mMode = mode;
 
     // send command via SW UART to projector
     projectorSerial.write(ProjectorOpcode::POP_MODE);
     projectorSerial.write(mode);
+
+    if (publish) {
+        mMqttClient.publish(MQS_PROJECTOR, TOPIC_PROJECTOR_MODE, strProjectorCommand(mode));
+    }
 }
 
 void ProjectorController::moveProjector(LiftCommand direction)
@@ -102,15 +106,24 @@ void ProjectorController::processSerialData(uint8_t data)
     switch (mCommandData[0]) {
         case ProjectorOpcode::POP_STATUS:
             if (mBufferSize >= 2) {
-                bool powerOn = ((mCommandData[1]>>1) & 0x01);
-                bool switchState = (mCommandData[1] & 0x01);
+                bool hasPowerStatus = ((mCommandData[1] >> 2) & 0x01);
+                bool powerOn =        ((mCommandData[1] >> 1) & 0x01);
+                bool switchState =    ( mCommandData[1]       & 0x01);
+
+                if (hasPowerStatus) {
+                    // check if the power status has changed
+                    if ( (powerOn && mMode == PROJECTOR_OFF) ||(!powerOn && mMode != PROJECTOR_OFF)) {
+                        mMode = powerOn ? PROJECTOR_ON : PROJECTOR_OFF;
+                        mMqttClient.publish(MQS_PROJECTOR, TOPIC_PROJECTOR_MODE, strProjectorCommand(mMode));
+                    }
+
+                    mMqttClient.publish(MQS_PROJECTOR, TOPIC_PROJECTOR_POWER, strBool(powerOn));
+                }
+                mMqttClient.publish(MQS_PROJECTOR, TOPIC_PROJECTOR_SWITCH, strBool(switchState));
 
                 if (mStatusCallback) {
-                    mStatusCallback(switchState, powerOn);
+                    mStatusCallback(switchState, powerOn, hasPowerStatus);
                 }
-
-                mMqttClient.publish(MQS_PROJECTOR, TOPIC_PROJECTOR_POWER, strBool(powerOn));
-                mMqttClient.publish(MQS_PROJECTOR, TOPIC_PROJECTOR_SWITCH, strBool(switchState));
 
                 // finish the command
                 mBufferSize = 0;

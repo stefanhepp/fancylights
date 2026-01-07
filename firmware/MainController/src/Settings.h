@@ -22,6 +22,9 @@
 
 class Settings
 {
+    private:
+        bool mChanged = false;
+
     public:
         Settings();
 
@@ -75,6 +78,13 @@ class Settings
         void setMQTTServer(const char *server, uint16_t port, const char *topic);
 
         void setMQTTClient(const char *clientID, const char *username, const char *password);
+
+        /**
+         * Return true if any setting was changed since the last call to clearChanged().
+         */
+        bool hasChanged() { return mChanged; }
+
+        void clearChanged() { mChanged = false; }
 
         void begin();
 };

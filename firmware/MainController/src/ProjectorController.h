@@ -17,7 +17,7 @@
 #include "Settings.h"
 #include "MqttClient.h"
 
-using StatusCallback = void(*)(bool switchState, bool powerOn);
+using StatusCallback = void(*)(bool switchState, bool powerOn, bool hasPowerStatus);
 
 static const int COM_BUF_SIZE = 4;
 
@@ -48,7 +48,7 @@ class ProjectorController {
 
         ProjectorCommand mode() const { return mMode; }
 
-        void sendMode(ProjectorCommand mode);
+        void sendMode(ProjectorCommand mode, bool publish = true);
 
         void moveProjector(LiftCommand direction);
 

@@ -40,11 +40,13 @@ bool Settings::isLEDStripEnabled()
 void Settings::setLampEnabled(bool enabled)
 {
     myPrefs.putUChar("lampOn", enabled);
+    mChanged = true;
 }
 
 void Settings::setLEDStripEnabled(bool enabled)
 {
     myPrefs.putUChar("LEDOn", enabled);
+    mChanged = true;
 }
 
 
@@ -56,6 +58,7 @@ RGBMode Settings::rgbMode()
 void Settings::setRGBMode(RGBMode mode)
 {
     myPrefs.putUChar("rgbMode", mode);
+    mChanged = true;
 }
 
 
@@ -67,6 +70,7 @@ uint8_t Settings::intensity()
 void Settings::setIntensity(uint8_t value)
 {
     myPrefs.putUChar("intensity", value);
+    mChanged = true;
 }
 
 uint8_t Settings::dimmedIntensity()
@@ -77,6 +81,7 @@ uint8_t Settings::dimmedIntensity()
 void Settings::setDimmedIntensity(uint8_t value)
 {
     myPrefs.putUChar("dimIntensity", value);
+    mChanged = true;
 }
 
 
@@ -95,6 +100,7 @@ void Settings::setHSV(uint8_t hue, uint8_t saturation, uint8_t value)
 {
     uint8_t hsv[3] = {hue, saturation, value};
     myPrefs.putBytes("hsv", hsv, sizeof(hsv));
+    mChanged = true;
 }
 
 String Settings::getWiFiSSID()

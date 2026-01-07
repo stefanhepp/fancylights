@@ -21,25 +21,72 @@ static const uint8_t IRQ_BUTTONS = 0;
 
 SoftwareSerial projectorSerial(PIN_SW_RXD, PIN_SW_TXD);
 
-static const int BUF_SIZE = 4;
+int PosResponse = -1;
+int StatusTimeout = 0;
 
 ProjectorOpcode LastCommand;
 
-void sendKeypadStatus() {
+
+void requestProjectorStatus() 
+{
+    // start reading and set timeout
+    PosResponse = 0;
+    StatusTimeout = 10;
+
+    // request status from projector
+    projectorSerial.write("* 0 Lamp ?\r");
+}
+
+void sendProjectorStatus(bool hasPowerStatus = false, bool powerOn = false) {
     uint8_t switchStatus = digitalRead(PIN_ENDSTOP) ? 0 : 1;
 
     Serial.write(ProjectorOpcode::POP_STATUS);
-    Serial.write(switchStatus);
+    Serial.write(hasPowerStatus << 2 | powerOn << 1 | switchStatus);
+}
+
+void processProjectorData(uint8_t data) {
+    if (PosResponse < 0) {
+        // not expecting data
+        return;
+    }
+
+    if (PosResponse < 5) {
+        if (data == "Lamp "[PosResponse]) {
+            PosResponse++;
+        } else {
+            // invalid response, send status and stop processing
+            sendProjectorStatus();
+            StatusTimeout = 0;
+            PosResponse = -1;
+        }
+    }
+    if (PosResponse == 5) {
+        if (data != '1' && data != '0') {
+            // invalid response, send status and stop processing
+            sendProjectorStatus();
+            StatusTimeout = 0;
+            PosResponse = -1;
+            return;
+        }
+
+        // got response, send status and stop processing
+        sendProjectorStatus(true, data == '1');
+        StatusTimeout = 0;
+        PosResponse = -1;
+    }
 }
 
 void processSerial(uint8_t data) {
-    // Checking for command byte
+    // Checking for opcode byte
     if ((data & 0xA0) == 0xA0) {
+        // received opcode byte
         LastCommand = (ProjectorOpcode)data;
+        // No additional data for status request, handle immediately
         if (data == ProjectorOpcode::POP_STATUS) {
-            sendKeypadStatus();
+            requestProjectorStatus();
         }
     } else {
+        // process command byte after opcode byte
         if (LastCommand == POP_MODE) {
             switch ((ProjectorCommand) data) {
                 case ProjectorCommand::PROJECTOR_OFF:
@@ -105,4 +152,16 @@ void loop() {
         processSerial(data);
     }
 
+    while (projectorSerial.available()) {
+        uint8_t data = projectorSerial.read();
+        processProjectorData(data);
+    }
+
+    if (StatusTimeout > 0) {
+        StatusTimeout--;
+        if (StatusTimeout == 0) {
+            // Timeout, send what we have
+            sendProjectorStatus(false);
+        }
+    }
 }
