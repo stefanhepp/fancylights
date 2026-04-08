@@ -41,10 +41,10 @@ class LEDDriver {
             ANIM_ON,
             // All LEDs same color, cycle color
             ANIM_COLORCYCLE,
-            // Transition: Fade in; param = size of bar
-            ANIM_FADE_IN,
-            // Transition: Fade out; param = size of bar
-            ANIM_FADE_OUT,
+            // Transition: Fade bar in; param = size of bar
+            ANIM_FADE_BAR_IN,
+            // Transition: Fade bar out; param = size of bar
+            ANIM_FADE_BAR_OUT,
             // Show a bar; param = size of bar (number of leds)
             ANIM_BAR,
             // Show a single dot; param = position (pixel number)
@@ -82,6 +82,15 @@ class LEDDriver {
             EF_WATER
         };
 
+        enum LEDFadeEffect {
+            // No fading
+            FADE_OFF,
+            // Fade in current effect
+            FADE_IN,
+            // Fade out current effect
+            FADE_OUT
+        };
+
         Settings   &mSettings;
         MqttClient &mMqttClient;
 
@@ -101,6 +110,9 @@ class LEDDriver {
         LEDAnimation  mAnimation = ANIM_NONE;
         LEDAnimation  mNextAnimation = ANIM_NONE;
         bool          mAnimationDirection;
+
+        LEDFadeEffect mFadeEffect;
+        int           mFadeParam;
 
         LEDEffect     mEffect;
         int           mEffectParam;
@@ -129,7 +141,7 @@ class LEDDriver {
 
         void startFading(bool fadeOut, LEDAnimation nextAnimation);
 
-        bool isFading() const { return mAnimation == ANIM_FADE_IN || mAnimation == ANIM_FADE_OUT; }
+        bool isFadeAnimation() const { return mAnimation == ANIM_FADE_BAR_IN || mAnimation == ANIM_FADE_BAR_OUT; }
 
         bool isAnimationFinished() const;
 

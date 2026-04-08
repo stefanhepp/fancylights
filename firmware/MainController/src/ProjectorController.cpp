@@ -129,6 +129,9 @@ void ProjectorController::processSerialData(uint8_t data)
                 mBufferSize = 0;
             }
             break;
+        default:
+            // Ignore data if we received an unknown command
+            mBufferSize = 0;
     }
 
     if (mBufferSize >= COM_BUF_SIZE) {

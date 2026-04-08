@@ -23,6 +23,7 @@
 
 #include "config.h"
 
+const char *TOPIC_LIGHT_ENABLE = "light";
 const char *TOPIC_LAMPS_ENABLE = "lamps";
 const char *TOPIC_LEDS_ENABLE = "leds";
 const char *TOPIC_INTENSITY = "intensity";
@@ -104,6 +105,7 @@ void LEDDriver::updateLEDs() {
                 }
                 break;
             case EF_FIRE:
+                // TODO
                 break;
             case EF_JUGGLE:
                 // colored dots, weaving in and out of sync with each other
@@ -127,7 +129,7 @@ void LEDDriver::updateLEDs() {
                 fill_rainbow(mLEDs, NUM_LEDS, mHSV.hue, 7);
                 break;
             case EF_WATER:
-                
+                // TODO
                 break;
         }
 
@@ -137,10 +139,20 @@ void LEDDriver::updateLEDs() {
             }
         }
 
+        int brightness = mHSV.value;
+
+        if (mFadeEffect != FADE_OFF) {
+            for (int i = mFadeEffect; i < NUM_LEDS / 2; i++) {
+                mLEDs[i] = CRGB::Black;
+                mLEDs[NUM_LEDS - 1 - i] = CRGB::Black;
+            }
+            brightness = (brightness * mFadeEffect * 2) / NUM_LEDS;
+        }
+
         if (mRGBMode == RGB_DIMMED) {
-            FastLED.setBrightness((((int)mHSV.value) * mDimmedIntensity)/ 255);
+            FastLED.setBrightness((brightness * mDimmedIntensity)/ 255);
         } else {
-            FastLED.setBrightness(mHSV.value);
+            FastLED.setBrightness(brightness);
         }
         FastLED.show();
     }
@@ -164,10 +176,10 @@ void LEDDriver::updateAnimation()
             // Color cycle, wrap around at 255
             mHSV[0]++;
             break;
-        case ANIM_FADE_IN:
+        case ANIM_FADE_BAR_IN:
             mEffectParam += 3;
             break;
-        case ANIM_FADE_OUT:
+        case ANIM_FADE_BAR_OUT:
             mEffectParam -= 4;
             break;
         case ANIM_CIRCLE:
@@ -182,6 +194,19 @@ void LEDDriver::updateAnimation()
             mHSV[0]++;
             mEffectParam = beatsin8(mEffectBPM, 64, 255);
             break;
+    }
+
+    if (mFadeEffect == FADE_IN) {
+        mFadeParam += 3;
+        if (mFadeParam >= NUM_LEDS / 2) {
+            mFadeEffect = FADE_OFF;
+        }
+    }
+    if (mFadeEffect == FADE_OUT) {
+        mFadeParam -= 4;
+        if (mFadeParam < 0) {
+            mFadeEffect = FADE_OFF;
+        }
     }
 
     if (mAnimation != ANIM_NONE) {
@@ -214,16 +239,16 @@ void LEDDriver::startAnimation(LEDAnimation animation)
         case ANIM_COLORCYCLE:
             mEffect = EF_FILLED;
             break;
-        case ANIM_FADE_IN:
+        case ANIM_FADE_BAR_IN:
             mEffect = EF_BAR;
-            if (!isFading()) {
+            if (!isFadeAnimation()) {
                 mEffectParam = 0;
             }
             mEffectMirrored = true;
             break;
-        case ANIM_FADE_OUT:
+        case ANIM_FADE_BAR_OUT:
             mEffect = EF_BAR;
-            if (!isFading()) {
+            if (!isFadeAnimation()) {
                 mEffectParam = NUM_LEDS / 2;
             }
             mEffectMirrored = true;
@@ -268,16 +293,30 @@ void LEDDriver::startAnimation(LEDAnimation animation)
 
 void LEDDriver::startFading(bool fadeOut, LEDAnimation nextAnimation)
 {
-    startAnimation( fadeOut ? ANIM_FADE_OUT : ANIM_FADE_IN );
-    setNextAnimation( nextAnimation );
+    if (fadeOut) {
+        if (mFadeEffect == FADE_OFF) {
+            mFadeParam = NUM_LEDS / 2;
+        }
+        mFadeEffect = FADE_OUT;
+        setNextAnimation(nextAnimation);
+    } else {
+        if (mFadeEffect == FADE_OFF) {
+            mFadeParam = 0;
+        }
+        mFadeEffect = FADE_IN;
+        startAnimation(nextAnimation);
+    }
 }
 
 bool LEDDriver::isAnimationFinished() const
 {
-    if (mAnimation == ANIM_FADE_IN && mEffectParam < NUM_LEDS / 2) {
+    if (mAnimation == ANIM_FADE_BAR_IN && mEffectParam < NUM_LEDS / 2) {
         return false;
     } 
-    if (mAnimation == ANIM_FADE_OUT && mEffectParam > 0) {
+    if (mAnimation == ANIM_FADE_BAR_OUT && mEffectParam > 0) {
+        return false;
+    }
+    if (mFadeEffect != FADE_OFF) {
         return false;
     }
     // All other animations immediately terminate
@@ -319,6 +358,15 @@ void LEDDriver::mqttCallback(const char *key, const char* payload, unsigned int 
 {
     if (length == 0) {
         return;
+    }
+    if (strcmp(key, TOPIC_LIGHT_ENABLE) == 0) {
+        bool val;
+        if (parseBool(payload, val)) {
+            if ((val && (!mEnableLamps && !mEnableLEDStrip)) || (!val && (mEnableLamps || mEnableLEDStrip))) {
+                enableLamps(val);
+                enableLEDStrip(val);
+            }
+        }
     }
     if (strcmp(key, TOPIC_LAMPS_ENABLE) == 0) {
         bool val;
@@ -408,6 +456,7 @@ void LEDDriver::subscribeCallback()
     String sIntensity(mLightIntensity);
     String sDimmedIntensity(mDimmedIntensity);
 
+    mMqttClient.publish(MQS_LEDS, TOPIC_LIGHT_ENABLE, strBool(mEnableLamps || mEnableLEDStrip), true);
     mMqttClient.publish(MQS_LEDS, TOPIC_LAMPS_ENABLE, strBool(mEnableLamps), true);
     mMqttClient.publish(MQS_LEDS, TOPIC_LEDS_ENABLE, strBool(mEnableLEDStrip), true);
     mMqttClient.publish(MQS_LEDS, TOPIC_INTENSITY, sIntensity.c_str(), true);
@@ -457,6 +506,9 @@ void LEDDriver::enableLamps(bool enabled, bool publish)
     if (publish) {
         mMqttClient.publish(MQS_LEDS, TOPIC_LAMPS_ENABLE, strBool(mEnableLamps), true);
     }
+    if (!mEnableLEDStrip) {
+        mMqttClient.publish(MQS_LEDS, TOPIC_LIGHT_ENABLE, strBool(mEnableLamps), true);
+    }
 }
 
 void LEDDriver::enableLEDStrip(bool enabled, bool publish)
@@ -479,6 +531,9 @@ void LEDDriver::enableLEDStrip(bool enabled, bool publish)
 
     if (publish) {
         mMqttClient.publish(MQS_LEDS, TOPIC_LEDS_ENABLE, strBool(mEnableLEDStrip), true);
+    }
+    if (!mEnableLamps) {
+        mMqttClient.publish(MQS_LEDS, TOPIC_LIGHT_ENABLE, strBool(mEnableLEDStrip), true);
     }
 }
 
