@@ -390,6 +390,49 @@ class ScreenParser: public CommandParser {
         }
 };
 
+class ProjectorParser: public CommandParser {
+    private:
+        LiftCommand mLiftCmd;
+        ProjectorCommand mProjectorCmd;
+        bool mIsLiftCommand = false;
+        bool mIsProjectorCommand = false;
+
+    public:
+        ProjectorParser() {}
+
+        virtual void printArguments() {
+            Serial.print("up|down|on|off|3D");
+        }
+
+        virtual CmdParseStatus startCommand(const char* cmd) {
+            mIsLiftCommand = false;
+            mIsProjectorCommand = false;
+            return CPSNextArgument;
+        }
+
+        virtual CmdParseStatus parseNextArgument(int argNo, const char* arg) {
+            if (parseLiftCommand(arg, mLiftCmd)) {
+                mIsLiftCommand = true;
+                return CPSComplete;
+            }
+            if (parseProjectorCommand(arg, mProjectorCmd)) {
+                mIsProjectorCommand = true;
+                return CPSComplete;
+            }
+            return CPSInvalidArgument;
+        }
+
+        virtual CmdExecStatus completeCommand(bool expectCommand) 
+        {
+            if (mIsLiftCommand) {
+                Projector.moveProjector(mLiftCmd);
+            }
+            if (mIsProjectorCommand) {
+                Projector.sendMode(mProjectorCmd);
+            }
+            return CmdExecStatus::CESOK;
+        }
+};
 
 void onProjectorStatus(bool switchState, bool powerOn, bool hasPowerStatus) {
 
@@ -530,6 +573,7 @@ void setup() {
     cmdline.addCommand("wifi", new WiFiParser());
     cmdline.addCommand("mqtt", new MQTTParser());
     cmdline.addCommand("screen", new ScreenParser());
+    cmdline.addCommand("projector", new ProjectorParser());
 
     LEDs.begin();
 

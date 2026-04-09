@@ -79,7 +79,7 @@ void ProjectorController::sendMode(ProjectorCommand mode, bool publish)
 
 void ProjectorController::moveProjector(LiftCommand direction)
 {
-
+    projectorSerial.write( direction == LiftCommand::LIFT_UP ? ProjectorOpcode::POP_LOCK : ProjectorOpcode::POP_UNLOCK );
 }
 
 void ProjectorController::moveScreen(LiftCommand direction)

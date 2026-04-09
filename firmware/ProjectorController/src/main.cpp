@@ -26,6 +26,7 @@ int StatusTimeout = 0;
 
 ProjectorOpcode LastCommand;
 
+ProjectorOpcode LockState = ProjectorOpcode::POP_ACK;
 
 void requestProjectorStatus() 
 {
@@ -35,6 +36,11 @@ void requestProjectorStatus()
 
     // request status from projector
     projectorSerial.write("* 0 Lamp ?\r");
+}
+
+void confirmLock() {
+    Serial.write(ProjectorOpcode::POP_ACK);
+    LockState = ProjectorOpcode::POP_ACK;
 }
 
 void sendProjectorStatus(bool hasPowerStatus = false, bool powerOn = false) {
@@ -84,6 +90,12 @@ void processSerial(uint8_t data) {
         // No additional data for status request, handle immediately
         if (data == ProjectorOpcode::POP_STATUS) {
             requestProjectorStatus();
+        }
+        else if (data == ProjectorOpcode::POP_LOCK) {
+            LockState = ProjectorOpcode::POP_LOCK;
+        }
+        else if (data == ProjectorOpcode::POP_UNLOCK) {
+            LockState = ProjectorOpcode::POP_UNLOCK;
         }
     } else {
         // process command byte after opcode byte
@@ -162,6 +174,22 @@ void loop() {
         if (StatusTimeout == 0) {
             // Timeout, send what we have
             sendProjectorStatus(false);
+        }
+    }
+
+    if (LockState == ProjectorOpcode::POP_UNLOCK) {
+        if (digitalRead(PIN_ENDSTOP) == LOW) {
+            // Endstop released, enable servo
+            //digitalWrite(PIN_SERVO_ENABLE, HIGH);
+
+            confirmLock();
+        }
+    } else if (LockState == ProjectorOpcode::POP_LOCK) {
+        if (digitalRead(PIN_ENDSTOP) == LOW) {
+            // Endstop reached, disable servo
+            //digitalWrite(PIN_SERVO_ENABLE, LOW);
+
+            confirmLock();
         }
     }
 }
