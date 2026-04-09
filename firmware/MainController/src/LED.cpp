@@ -142,11 +142,11 @@ void LEDDriver::updateLEDs() {
         int brightness = mHSV.value;
 
         if (mFadeEffect != FADE_OFF) {
-            for (int i = mFadeEffect; i < NUM_LEDS / 2; i++) {
+            for (int i = mFadeParam; i < NUM_LEDS / 2; i++) {
                 mLEDs[i] = CRGB::Black;
                 mLEDs[NUM_LEDS - 1 - i] = CRGB::Black;
             }
-            brightness = (brightness * mFadeEffect * 2) / NUM_LEDS;
+            brightness = (brightness * mFadeParam * 2) / NUM_LEDS;
         }
 
         if (mRGBMode == RGB_DIMMED) {
@@ -160,11 +160,6 @@ void LEDDriver::updateLEDs() {
 
 void LEDDriver::updateAnimation()
 {
-    if (isAnimationFinished() && mNextAnimation != ANIM_NONE) {
-        startAnimation(mNextAnimation);        
-        mNextAnimation = ANIM_NONE;
-    }
-
     switch (mAnimation) {
         case ANIM_NONE:
         case ANIM_ON:
@@ -207,6 +202,12 @@ void LEDDriver::updateAnimation()
         if (mFadeParam < 0) {
             mFadeEffect = FADE_OFF;
         }
+    }
+
+    // check for finished animation after updating fade state, so that next animation starts as soon as fade is finished.
+    if (isAnimationFinished() && mNextAnimation != ANIM_NONE) {
+        startAnimation(mNextAnimation);        
+        mNextAnimation = ANIM_NONE;
     }
 
     if (mAnimation != ANIM_NONE) {
