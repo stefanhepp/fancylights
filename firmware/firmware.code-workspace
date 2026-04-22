@@ -9,10 +9,6 @@
 			"path": "KeypadEncoder"
 		},
 		{
-			"name": "FancyController",
-			"path": "FancyController"
-		},
-		{
 			"name": "MainController",
 			"path": "MainController"
 		},
