@@ -17,23 +17,31 @@
 #include "Settings.h"
 #include "MqttClient.h"
 
-using StatusCallback = void(*)(bool switchState, bool powerOn, bool hasPowerStatus);
+using StatusCallback = void(*)(bool switchState, bool powerOn, bool hasPowerStatus, bool isPowering);
+using ModeChangeCallback = void(*)(ProjectorCommand mode);
 
 static const int COM_BUF_SIZE = 4;
 
 class ProjectorController {
     private:
-        StatusCallback mStatusCallback = nullptr;
+        StatusCallback     mStatusCallback = nullptr;
+        ModeChangeCallback mModeChangeCallback = nullptr;
 
         ProjectorCommand mMode = PROJECTOR_OFF;
 
         uint8_t mCntPulse = 0;
+
+        unsigned long mPowerChangeTime = 0;
+
+        bool mDelayedStatusRequest = false;
 
         Settings   &mSettings;
         MqttClient &mMqttClient;
 
         int     mBufferSize = 0;
         uint8_t mCommandData[COM_BUF_SIZE];
+
+        bool isPowerChanging();
 
         void processSerialData(uint8_t data);
 
@@ -45,6 +53,8 @@ class ProjectorController {
         explicit ProjectorController(Settings &settings, MqttClient &mqttClient);
         
         void setStatusCallback(StatusCallback callback) { mStatusCallback = callback; }
+
+        void setModeChangeCallback(ModeChangeCallback callback) { mModeChangeCallback = callback; }
 
         ProjectorCommand mode() const { return mMode; }
 

@@ -22,50 +22,16 @@
 #include "LED.h"
 #include "Settings.h"
 #include "ProjectorController.h"
+#include "KeypadDriver.h"
 #include "MqttClient.h"
-
-HardwareSerial keypadSerial(UART_KEYPAD);
 
 Settings settings;
 CommandLine cmdline;
 MqttClient mqttClient(settings);
 LEDDriver LEDs(settings, mqttClient);
 ProjectorController Projector(settings, mqttClient);
+KeypadDriver Keypad(settings, LEDs, Projector);
 
-static const int UART_BUFFER_SIZE = 16;
-static uint8_t UARTBuffer[UART_BUFFER_SIZE];
-static uint8_t UARTBufferLength = 0;
-
-// Value 0 means no timeout running, 1 means ready to send, >1 means countdown running
-uint8_t CntStatusTimeout = 0;
-
-/**
- * Start a timeout to send a status reply to the keypad
- */
-void startStatusTimeout() {
-    CntStatusTimeout = 20;
-}
-
-/**
- * Indicate that the status is ready to be sent to the keypad
- */
-void statusReady() {
-    CntStatusTimeout = 1;
-}
-
-bool checkStatusTimeout() {
-    if (CntStatusTimeout > 0) {
-        CntStatusTimeout--;
-        if (CntStatusTimeout == 0) {
-            // Timeout reached, send status
-            return true;
-        }
-    }
-    // no timer running or not yet reached
-    return false;
-}
-
-void sendKeypadStatus();
 
 class StatusParser: public CommandParser
 {
@@ -434,113 +400,16 @@ class ProjectorParser: public CommandParser {
         }
 };
 
-void onProjectorStatus(bool switchState, bool powerOn, bool hasPowerStatus) {
+void onProjectorStatus(bool switchState, bool powerOn, bool hasPowerStatus, bool isPowering) {
 
-    Serial.printf("[Projector] Status: Power %s, Switch %s\n", hasPowerStatus ? strBool(powerOn) : "-", 
-                                                               strBool(switchState)
+    Serial.printf("[Projector] Status: Power %s%s, Switch %s\n", hasPowerStatus ? strBool(powerOn) : "-", 
+                                                                 isPowering ? " [powering on/off]" : "",
+                                                                 strBool(switchState)
                                                             );
-
-    // Send a status update to the keypad with the received status
-    statusReady();
 }
 
-/**
- * Send the current settings to the keypad controller.
- */
-void sendKeypadStatus()
-{
-    keypadSerial.write(CMD_HEADER | CMD_READ_STATUS);
-    keypadSerial.write((LEDs.isLEDStripEnabled() << 1) | (LEDs.isLampEnabled()));
-    keypadSerial.write(LEDs.intensity());
-    keypadSerial.write(LEDs.dimmedIntensity());
-    keypadSerial.write(Projector.mode());
-    keypadSerial.write(LEDs.rgbMode());
-    keypadSerial.write(LEDs.getHSV().hue);
-    keypadSerial.write(LEDs.getHSV().sat);
-    keypadSerial.write(LEDs.getHSV().val);
-}
-
-void processKeypadCommand(uint8_t data)
-{
-    if (UARTBufferLength == 0 && (data & CMD_HEADER) != CMD_HEADER) {
-        // Wait for command byte, drop other data
-        return;
-    }
-
-    if (UARTBufferLength < UART_BUFFER_SIZE) {
-        UARTBuffer[UARTBufferLength++] = data;
-    }
-
-    switch (UARTBuffer[0] & ~CMD_HEADER) {
-        case CMD_LIGHT_INTENSITY:
-            if (UARTBufferLength >= 2) {
-                Serial.printf("[Kbd] Set light intensity: %hhu\n", UARTBuffer[1]);
-                LEDs.setIntensity(UARTBuffer[1]);
-                UARTBufferLength = 0;
-            }
-            break;
-        case CMD_DIMMED_INTENSITY:
-            if (UARTBufferLength >= 2) {
-                Serial.printf("[Kbd] Set dimmed intensity: %hhu\n", UARTBuffer[1]);
-                LEDs.setDimmedIntensity(UARTBuffer[1]);
-                UARTBufferLength = 0;
-            }
-            break;
-        case CMD_HSV_COLOR:
-            if (UARTBufferLength >= 4) {
-                Serial.printf("[Kbd] Set HSV: %hhu %hhu %hhu\n", UARTBuffer[1], UARTBuffer[2], UARTBuffer[3]);
-                LEDs.setHSV(UARTBuffer[1], UARTBuffer[2], UARTBuffer[3]);
-                UARTBufferLength = 0;
-            }
-            break;
-        case CMD_LIGHT_MODE:
-            if (UARTBufferLength >= 2) {
-                Serial.printf("[Kbd] Enable lamp: %s, LED strip: %s\n", strBool(UARTBuffer[1] & 0x01), strBool(UARTBuffer[1] & 0x02));
-                LEDs.enableLamps(UARTBuffer[1] & 0x01);
-                LEDs.enableLEDStrip(UARTBuffer[1] & 0x02);
-                UARTBufferLength = 0;
-            }
-            break;
-        case CMD_RGB_MODE:
-            if (UARTBufferLength >= 2) {
-                Serial.printf("[Kbd] Set RGB mode: %s\n", strRGBMode((RGBMode) UARTBuffer[1]));
-                LEDs.setRGBMode((RGBMode) UARTBuffer[1]);
-                UARTBufferLength = 0;
-            }
-            break;
-        case CMD_SCREEN:
-            if (UARTBufferLength >= 2) {
-                Serial.printf("[Kbd] Move Screen: %s\n", strLiftCommand((LiftCommand) UARTBuffer[1]));
-                Projector.moveScreen((LiftCommand) UARTBuffer[1]);
-                UARTBufferLength = 0;
-            }
-            break;
-        case CMD_PROJECTOR_MODE:
-            if (UARTBufferLength >= 2) {
-                Serial.printf("[Kbd] Set projector mode: %s\n", strProjectorCommand((ProjectorCommand) UARTBuffer[1]));
-                Projector.sendMode((ProjectorCommand) UARTBuffer[1]);
-                UARTBufferLength = 0;
-            }
-            break;
-        case CMD_PROJECTOR_LIFT:
-            if (UARTBufferLength >= 2) {
-                Serial.printf("[Kbd] Lift projector: %s\n", strLiftCommand((LiftCommand) UARTBuffer[1]));
-                Projector.moveProjector((LiftCommand) UARTBuffer[1]);
-                UARTBufferLength = 0;
-            }
-            break;
-        case CMD_REQUEST_STATUS:
-            if (UARTBufferLength >= 2) {
-                Projector.requestStatus();
-                startStatusTimeout();
-                UARTBufferLength = 0;
-            }
-            break;
-        default:
-            // unknown command, drop
-            UARTBufferLength = 0;
-            break;
-    }
+void onProjectorModeChange(ProjectorCommand mode) {
+    Keypad.sendStatus();
 }
 
 void checkWiFiConnection()
@@ -578,9 +447,10 @@ void setup() {
     LEDs.begin();
 
     Projector.setStatusCallback(onProjectorStatus);
+    Projector.setModeChangeCallback(onProjectorModeChange);
     Projector.begin();
 
-    keypadSerial.begin(UART_SPEED_CONTROLLER, SERIAL_8N1, PIN_KP_RXD, PIN_KP_TXD);
+    Keypad.begin();
 
     WiFi.mode(WIFI_STA);
     WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
@@ -591,29 +461,11 @@ void setup() {
 }
 
 void loop() {
-    // Process keypad UART cmds
-    while (keypadSerial.available()) {
-        char data = keypadSerial.read();
-
-        processKeypadCommand(data);
-    }
-
+    Keypad.loop();
     cmdline.loop();
     mqttClient.loop();
     LEDs.loop();
     Projector.loop();
-
-    EVERY_N_MILLISECONDS( 10 ) {
-        // Check if we need to send status to keypad
-        bool timeout = checkStatusTimeout();
-        bool changed = settings.hasChanged();
-        
-        if (timeout || changed) {
-            sendKeypadStatus();
-        }
-
-        settings.clearChanged();
-    }
 
     EVERY_N_SECONDS( 20 ) {
         checkWiFiConnection();

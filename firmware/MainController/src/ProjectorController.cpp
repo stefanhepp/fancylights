@@ -64,13 +64,28 @@ void ProjectorController::subscribeCallback()
     mMqttClient.subscribe(MQS_PROJECTOR, TOPIC_SCREEN_MOVE);
 }
 
+bool ProjectorController::isPowerChanging()
+{
+    return mPowerChangeTime > 0 && (millis() - mPowerChangeTime) < 1000; 
+}
+
 void ProjectorController::sendMode(ProjectorCommand mode, bool publish)
 {
+    bool modeChange = (mMode != mode);
+    
+    if ((mMode == ProjectorCommand::PROJECTOR_OFF) != (mode == ProjectorCommand::PROJECTOR_OFF)) {
+        mPowerChangeTime = millis();
+    }
+
     mMode = mode;
 
     // send command via SW UART to projector
     projectorSerial.write(ProjectorOpcode::POP_MODE);
     projectorSerial.write(mode);
+
+    if (modeChange && mModeChangeCallback) {
+        mModeChangeCallback(mode);
+    }
 
     if (publish) {
         mMqttClient.publish(MQS_PROJECTOR, TOPIC_PROJECTOR_MODE, strProjectorCommand(mode));
@@ -97,6 +112,10 @@ void ProjectorController::requestStatus()
 {
     // Request status from projector controller
     projectorSerial.write(ProjectorOpcode::POP_STATUS);
+
+    if (isPowerChanging()) {
+        mDelayedStatusRequest = true;
+    }
 }
 
 void ProjectorController::processSerialData(uint8_t data)
@@ -111,9 +130,12 @@ void ProjectorController::processSerialData(uint8_t data)
                 bool switchState =    ( mCommandData[1]       & 0x01);
 
                 if (hasPowerStatus) {
-                    // check if the power status has changed
-                    if ( (powerOn && mMode == PROJECTOR_OFF) ||(!powerOn && mMode != PROJECTOR_OFF)) {
+                    // check if the power status has changed, but ignore status immediately after powering on/off
+                    if ( ((powerOn && mMode == PROJECTOR_OFF) || (!powerOn && mMode != PROJECTOR_OFF)) && !isPowerChanging()) {
                         mMode = powerOn ? PROJECTOR_ON : PROJECTOR_OFF;
+                        if (mModeChangeCallback) {
+                            mModeChangeCallback(mMode);
+                        }
                         mMqttClient.publish(MQS_PROJECTOR, TOPIC_PROJECTOR_MODE, strProjectorCommand(mMode));
                     }
 
@@ -122,7 +144,7 @@ void ProjectorController::processSerialData(uint8_t data)
                 mMqttClient.publish(MQS_PROJECTOR, TOPIC_PROJECTOR_SWITCH, strBool(switchState));
 
                 if (mStatusCallback) {
-                    mStatusCallback(switchState, powerOn, hasPowerStatus);
+                    mStatusCallback(switchState, powerOn, hasPowerStatus, isPowerChanging());
                 }
 
                 // finish the command
@@ -172,6 +194,12 @@ void ProjectorController::loop()
         char data = projectorSerial.read();
 
         processSerialData(data);
+    }
+
+    // Send another status request after power up/down is finished
+    if (mDelayedStatusRequest && !isPowerChanging()) {
+        requestStatus();
+        mDelayedStatusRequest = false;
     }
 
     EVERY_N_MILLISECONDS( 100 ) {

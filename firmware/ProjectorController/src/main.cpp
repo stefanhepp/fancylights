@@ -22,20 +22,41 @@ static const uint8_t IRQ_BUTTONS = 0;
 SoftwareSerial projectorSerial(PIN_SW_RXD, PIN_SW_TXD);
 
 int PosResponse = -1;
-int StatusTimeout = 0;
+unsigned long StatusTimeout = 0;
 
 ProjectorOpcode LastCommand;
 
 ProjectorOpcode LockState = ProjectorOpcode::POP_ACK;
 
+bool LastSwitchState = false;
+
+bool isSwitchPressed()
+{
+    return digitalRead(PIN_ENDSTOP) == LOW;
+}
+
 void requestProjectorStatus() 
 {
     // start reading and set timeout
     PosResponse = 0;
-    StatusTimeout = 10;
+    StatusTimeout = millis() + 800;
 
     // request status from projector
     projectorSerial.write("* 0 Lamp ?\r");
+}
+
+void moveServo(bool lock) {
+    digitalWrite(PIN_SERVO_ENABLE, LOW);
+
+    // generate PWM signal for about 1 second
+    for (int i = 0; i < 50; i++) {
+        digitalWrite(PIN_SERVO_PWM, HIGH);
+        delayMicroseconds(lock ? 1900 : 1000);
+        digitalWrite(PIN_SERVO_PWM, LOW);
+        delay(18);
+    }
+
+    digitalWrite(PIN_SERVO_ENABLE, HIGH);
 }
 
 void confirmLock() {
@@ -44,10 +65,14 @@ void confirmLock() {
 }
 
 void sendProjectorStatus(bool hasPowerStatus = false, bool powerOn = false) {
-    uint8_t switchStatus = digitalRead(PIN_ENDSTOP) ? 0 : 1;
+    uint8_t switchStatus = isSwitchPressed() ? 1 : 0;
 
     Serial.write(ProjectorOpcode::POP_STATUS);
     Serial.write(hasPowerStatus << 2 | powerOn << 1 | switchStatus);
+
+    // clear timeout
+    StatusTimeout = 0;
+    PosResponse = -1;
 }
 
 void processProjectorData(uint8_t data) {
@@ -56,29 +81,28 @@ void processProjectorData(uint8_t data) {
         return;
     }
 
-    if (PosResponse < 5) {
-        if (data == "Lamp "[PosResponse]) {
+    if (PosResponse < 10) {
+        if (PosResponse > 0 && PosResponse < 3) {
+            // This is some counter, ignore
             PosResponse++;
-        } else {
+        }
+        else if (data == "*000\rLamp "[PosResponse]) {
+            PosResponse++;
+        }
+        else {
             // invalid response, send status and stop processing
             sendProjectorStatus();
-            StatusTimeout = 0;
-            PosResponse = -1;
         }
     }
-    if (PosResponse == 5) {
+    else if (PosResponse == 10) {
         if (data != '1' && data != '0') {
             // invalid response, send status and stop processing
             sendProjectorStatus();
-            StatusTimeout = 0;
-            PosResponse = -1;
-            return;
         }
-
-        // got response, send status and stop processing
-        sendProjectorStatus(true, data == '1');
-        StatusTimeout = 0;
-        PosResponse = -1;
+        else {
+            // got response, send status and stop processing
+            sendProjectorStatus(true, data == '1');
+        }
     }
 }
 
@@ -109,6 +133,7 @@ void processSerial(uint8_t data) {
                     projectorSerial.write("* 0 IR 001\r");
                     break;
                 case ProjectorCommand::PROJECTOR_NORMAL:
+                case ProjectorCommand::PROJECTOR_VR:
                     // 3D Off
                     projectorSerial.write("* 0 IR 057\r");
                     break;
@@ -124,29 +149,14 @@ void processSerial(uint8_t data) {
                     // not implemented
                     break;
             }
+            // Stop processing
+            LastCommand = ProjectorOpcode::POP_ACK;
         }
     }
 }
 
-void setup() {
-    // Enable pullups for unconnected pins
-    pinMode(PIN_PB0, INPUT_PULLUP);
-    pinMode(PIN_PB2, INPUT_PULLUP);
-    pinMode(PIN_PB3, INPUT_PULLUP);
-    pinMode(PIN_PB4, INPUT_PULLUP);
-    pinMode(PIN_PB5, INPUT_PULLUP);
-    pinMode(PIN_PB6, INPUT_PULLUP);
-    pinMode(PIN_PB7, INPUT_PULLUP);
-    pinMode(PIN_PC0, INPUT_PULLUP);
-    pinMode(PIN_PC1, INPUT_PULLUP);
-    pinMode(PIN_PC3, INPUT_PULLUP);
-    pinMode(PIN_PC4, INPUT_PULLUP);
-    pinMode(PIN_PC5, INPUT_PULLUP);
-    pinMode(PIN_PC6, INPUT_PULLUP);
-    pinMode(PIN_PD4, INPUT_PULLUP);
-    pinMode(PIN_PD5, INPUT_PULLUP);
-    pinMode(PIN_PD7, INPUT_PULLUP);
-
+void setup()
+{
     pinMode(PIN_ENDSTOP, INPUT_PULLUP);
 
     pinMode(PIN_SERVO_ENABLE, OUTPUT);
@@ -170,25 +180,33 @@ void loop() {
     }
 
     if (StatusTimeout > 0) {
-        StatusTimeout--;
-        if (StatusTimeout == 0) {
+        // Check if timeout is reached
+        unsigned long now = millis();
+        if ((StatusTimeout < now && (now - StatusTimeout) < 2000)
+         || (now < 2000 && StatusTimeout > 2000))
+        {
             // Timeout, send what we have
             sendProjectorStatus(false);
         }
     }
 
-    if (LockState == ProjectorOpcode::POP_UNLOCK) {
-        if (digitalRead(PIN_ENDSTOP) == LOW) {
-            // Endstop released, enable servo
-            //digitalWrite(PIN_SERVO_ENABLE, HIGH);
+    bool endstopPressed = isSwitchPressed();
+    if (!LastSwitchState && endstopPressed) {
+        // Switch is pressed, send status update
+        sendProjectorStatus(false);
+    }
+    LastSwitchState = endstopPressed;
 
+    if (LockState == ProjectorOpcode::POP_UNLOCK) {
+        if (endstopPressed) {
+            // Endstop reached, release lock
+            moveServo(false);
             confirmLock();
         }
     } else if (LockState == ProjectorOpcode::POP_LOCK) {
-        if (digitalRead(PIN_ENDSTOP) == LOW) {
-            // Endstop reached, disable servo
-            //digitalWrite(PIN_SERVO_ENABLE, LOW);
-
+        if (endstopPressed) {
+            // Endstop reached, engage lock
+            moveServo(true);
             confirmLock();
         }
     }
